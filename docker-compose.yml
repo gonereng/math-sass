@@ -3,7 +3,8 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      # Host 5433 avoids conflict with a local Postgres on 5432
+      - "5433:5432"
     environment:
       POSTGRES_USER: mathsaas
       POSTGRES_PASSWORD: mathsaas
