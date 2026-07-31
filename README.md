@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MathSheets
 
-## Getting Started
+SaaS skeleton for generating math problem sheets and workbooks.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Next.js, Auth.js, Prisma, Postgres, Tailwind, shadcn/ui
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose)
+- Node.js 20+
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local setup
 
-## Learn More
+1. Start Postgres:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   docker compose up -d
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   Postgres listens on host port **5433** (mapped from container 5432). This avoids conflicting with a local Postgres install that often uses 5432. If you change `docker-compose.yml` to map `5432:5432` while another Postgres is running on 5432, the container will fail to start or your app will connect to the wrong database.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. Copy environment variables:
 
-## Deploy on Vercel
+   ```bash
+   copy .env.example .env
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   Set a strong random value for `AUTH_SECRET` (e.g. `openssl rand -base64 32`). Keep `DATABASE_URL` pointed at `localhost:5433` as in `.env.example`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```
+   DATABASE_URL="postgresql://mathsaas:mathsaas@localhost:5433/mathsaas"
+   ```
+
+3. Install dependencies and apply migrations:
+
+   ```bash
+   npm install
+   npx prisma migrate dev
+   ```
+
+4. Run the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000).
+
+## Scripts
+
+| Command        | Description              |
+| -------------- | ------------------------ |
+| `npm run dev`  | Start Next.js dev server |
+| `npm test`     | Run Vitest unit tests    |
+| `npm run lint` | ESLint                   |
+| `npm run build`| Production build         |
+
+## Auth flow
+
+Register at `/register`, sign in at `/login`. Protected routes (`/dashboard`, `/projects`, `/problems`, `/templates`) require a session. Domain CRUD is stubbed — "New …" buttons show a "Coming soon" toast.
