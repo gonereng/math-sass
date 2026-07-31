@@ -9,6 +9,7 @@ export const config = {
     "/projects/:path*",
     "/problems/:path*",
     "/templates/:path*",
+    "/settings/:path*",
     "/login",
     "/register",
   ],

@@ -42,6 +42,17 @@ export function AppSidebar({ email }: { email: string }) {
         })}
       </nav>
       <div className="space-y-2 border-t p-3">
+        <Link
+          href="/settings"
+          className={cn(
+            "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            pathname === "/settings"
+              ? "bg-muted text-foreground"
+              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          )}
+        >
+          Settings
+        </Link>
         <p className="truncate px-1 text-xs text-muted-foreground">{email}</p>
         <LogoutButton />
       </div>

@@ -16,7 +16,8 @@ export const authConfig = {
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/projects") ||
         pathname.startsWith("/problems") ||
-        pathname.startsWith("/templates");
+        pathname.startsWith("/templates") ||
+        pathname.startsWith("/settings");
 
       if (isAuthRoute) {
         if (isLoggedIn) {
