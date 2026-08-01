@@ -103,14 +103,11 @@ export function ProjectsEditor({
         toast.error(result.error);
         return;
       }
-      setProjects((prev) => {
-        const next = prev.filter((p) => p.id !== deletedId);
-        setSelectedId((current) => {
-          if (current !== deletedId) return current;
-          return next[0]?.id ?? null;
-        });
-        return next;
-      });
+      const nextProjects = projects.filter((p) => p.id !== deletedId);
+      setProjects(nextProjects);
+      setSelectedId((current) =>
+        current !== deletedId ? current : (nextProjects[0]?.id ?? null),
+      );
     } finally {
       setBusy(false);
     }

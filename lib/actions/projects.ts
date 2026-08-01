@@ -4,7 +4,10 @@ import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
-import { propsFromRange } from "@/lib/projects/generate-props";
+import {
+  isSupportedProblemType,
+  propsFromRange,
+} from "@/lib/projects/generate-props";
 import {
   assertSnapshotRanges,
   buildTemplateSnapshot,
@@ -17,6 +20,7 @@ import {
   deleteProjectSchema,
   generateProjectSchema,
   removeSectionSchema,
+  pageCountSchema,
   reorderSectionsSchema,
   updateSectionPageCountSchema,
 } from "@/lib/validations/project";
@@ -273,10 +277,15 @@ export async function reorderProjectSections(
     });
     if (!project) return { ok: false, error: UNEXPECTED };
 
+    const { sectionIds } = parsed.data;
+    if (new Set(sectionIds).size !== sectionIds.length) {
+      return { ok: false, error: "Invalid input" };
+    }
+
     const ids = new Set(project.sections.map((s) => s.id));
     if (
-      parsed.data.sectionIds.length !== ids.size ||
-      !parsed.data.sectionIds.every((id) => ids.has(id))
+      sectionIds.length !== ids.size ||
+      !sectionIds.every((id) => ids.has(id))
     ) {
       return { ok: false, error: UNEXPECTED };
     }
@@ -351,9 +360,23 @@ export async function generateProject(
       .sort((a, b) => a.sortOrder - b.sortOrder);
 
     for (const section of sections) {
+      const pageCount = pageCountSchema.safeParse(section.pageCount);
+      if (!pageCount.success) {
+        return { ok: false, error: "Invalid page count" };
+      }
+
       const snapshot = parseSnapshot(section.templateSnapshot);
       const check = assertSnapshotRanges(snapshot);
       if (!check.ok) return { ok: false, error: check.error };
+
+      for (const item of snapshot.items) {
+        if (!isSupportedProblemType(item.problemTypeId)) {
+          return {
+            ok: false,
+            error: `Unsupported problem type: ${item.problemTypeId}`,
+          };
+        }
+      }
     }
 
     const pagesData: {
