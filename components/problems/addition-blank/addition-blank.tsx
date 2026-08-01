@@ -12,7 +12,7 @@ export function AdditionBlank({
   return (
     <div
       className={cn(
-        "inline-flex items-baseline gap-2 font-medium text-foreground",
+        "inline-flex items-baseline gap-2 font-medium text-black",
         className,
       )}
       style={{ fontSize: size }}
@@ -22,7 +22,7 @@ export function AdditionBlank({
       </span>
       <span
         aria-hidden="true"
-        className="inline-block min-w-[4rem] border-b-2 border-foreground align-baseline"
+        className="inline-block min-w-[4rem] border-b-2 border-black align-baseline"
       />
     </div>
   );

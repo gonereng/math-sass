@@ -36,6 +36,7 @@ export function ProblemsCatalog() {
               <button
                 key={entry.id}
                 type="button"
+                aria-current={active ? "true" : undefined}
                 onClick={() => setSelectedId(entry.id)}
                 className={cn(
                   "rounded-md px-3 py-2 text-left text-sm font-medium transition-colors",
