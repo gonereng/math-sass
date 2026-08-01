@@ -38,6 +38,15 @@ export function getLayout(layoutId: string): LayoutPreset {
   return found;
 }
 
+/** Layouts exposed in the Templates editor switcher. */
+export const SWITCHABLE_LAYOUT_IDS = ["two-columns", "grid-2x2"] as const;
+
+export type SwitchableLayoutId = (typeof SWITCHABLE_LAYOUT_IDS)[number];
+
+export function isSwitchableLayoutId(id: string): id is SwitchableLayoutId {
+  return (SWITCHABLE_LAYOUT_IDS as readonly string[]).includes(id);
+}
+
 export function getLayoutClassName(layoutId: string): string {
   switch (getLayout(layoutId).id) {
     case "two-columns":

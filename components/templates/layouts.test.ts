@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LAYOUT_ID,
+  SWITCHABLE_LAYOUT_IDS,
   getLayout,
   getLayoutClassName,
+  isSwitchableLayoutId,
   layoutPresets,
 } from "./layouts";
 
@@ -22,6 +24,13 @@ describe("layouts", () => {
     expect(layoutPresets.map((l) => l.id).sort()).toEqual(
       ["grid-2x2", "single-column", "two-columns"].sort(),
     );
+  });
+
+  it("exposes switchable layouts for the editor", () => {
+    expect([...SWITCHABLE_LAYOUT_IDS]).toEqual(["two-columns", "grid-2x2"]);
+    expect(isSwitchableLayoutId("two-columns")).toBe(true);
+    expect(isSwitchableLayoutId("grid-2x2")).toBe(true);
+    expect(isSwitchableLayoutId("single-column")).toBe(false);
   });
 
   it("maps layout ids to grid/flex classes", () => {

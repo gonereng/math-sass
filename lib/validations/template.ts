@@ -15,4 +15,9 @@ export const createTemplateSchema = z.object({
   layoutId: z.string().optional(),
 });
 
+export const updateLayoutSchema = z.object({
+  templateId: z.string().min(1),
+  layoutId: z.enum(["two-columns", "grid-2x2"]),
+});
+
 export type MinMaxInput = z.infer<typeof minMaxSchema>;

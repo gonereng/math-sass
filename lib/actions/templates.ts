@@ -13,6 +13,7 @@ import { randomIntInRange } from "@/lib/random";
 import {
   createTemplateSchema,
   minMaxSchema,
+  updateLayoutSchema,
 } from "@/lib/validations/template";
 
 export type TemplateWithItems = {
@@ -317,6 +318,88 @@ export async function removeTemplateItem(input: {
 
     await prisma.templateItem.delete({ where: { id: item.id } });
     return { ok: true };
+  } catch {
+    return { ok: false, error: UNEXPECTED };
+  }
+}
+
+export async function updateTemplateLayout(input: {
+  templateId: string;
+  layoutId: string;
+}): Promise<
+  | { ok: true; template: TemplateWithItems }
+  | ActionError
+> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const parsed = updateLayoutSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const newLayout = getLayout(parsed.data.layoutId);
+  if (newLayout.id !== parsed.data.layoutId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const validBoxIds = new Set(newLayout.boxes.map((b) => b.id));
+  const fallbackBoxId = newLayout.boxes[0]?.id;
+  if (!fallbackBoxId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  try {
+    const template = await prisma.template.findFirst({
+      where: { id: parsed.data.templateId, userId },
+      include: {
+        items: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+    if (!template) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
+    if (template.layoutId === parsed.data.layoutId) {
+      return { ok: true, template: mapTemplate(template) };
+    }
+
+    const keptInFallback = template.items.filter(
+      (item) => item.boxId === fallbackBoxId,
+    );
+    const orphaned = template.items.filter(
+      (item) => !validBoxIds.has(item.boxId),
+    );
+
+    await prisma.$transaction(async (tx) => {
+      await tx.template.update({
+        where: { id: template.id },
+        data: { layoutId: parsed.data.layoutId },
+      });
+
+      let nextOrder = keptInFallback.length;
+      for (const item of orphaned) {
+        await tx.templateItem.update({
+          where: { id: item.id },
+          data: { boxId: fallbackBoxId, sortOrder: nextOrder },
+        });
+        nextOrder += 1;
+      }
+    });
+
+    const updated = await prisma.template.findFirst({
+      where: { id: template.id, userId },
+      include: {
+        items: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+    if (!updated) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
+    return { ok: true, template: mapTemplate(updated) };
   } catch {
     return { ok: false, error: UNEXPECTED };
   }

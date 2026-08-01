@@ -11,6 +11,11 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { LetterShell } from "@/components/templates/letter-shell";
+import {
+  SWITCHABLE_LAYOUT_IDS,
+  getLayout,
+  isSwitchableLayoutId,
+} from "@/components/templates/layouts";
 import { MinMaxDialog } from "@/components/templates/min-max-dialog";
 import { ProblemPalette } from "@/components/templates/problem-palette";
 import { TemplateCanvas } from "@/components/templates/template-canvas";
@@ -21,6 +26,7 @@ import {
   createTemplate,
   reorderTemplateItems,
   removeTemplateItem,
+  updateTemplateLayout,
   type TemplateWithItems,
 } from "@/lib/actions/templates";
 import { cn } from "@/lib/utils";
@@ -134,6 +140,28 @@ export function TemplatesEditor({
       );
       setPendingDrop(null);
       return true;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleLayoutChange(layoutId: string) {
+    if (!selected || !isSwitchableLayoutId(layoutId)) return;
+    if (selected.layoutId === layoutId) return;
+
+    setBusy(true);
+    try {
+      const result = await updateTemplateLayout({
+        templateId: selected.id,
+        layoutId,
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === selected.id ? result.template : t)),
+      );
     } finally {
       setBusy(false);
     }
@@ -253,7 +281,44 @@ export function TemplatesEditor({
 
         <section className="min-w-0 flex-1 overflow-auto px-2">
           {selected ? (
-            <>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold tracking-tight">
+                    {selected.name}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Layout for this page
+                  </p>
+                </div>
+                <div
+                  className="inline-flex rounded-md border bg-background p-0.5"
+                  role="group"
+                  aria-label="Page layout"
+                >
+                  {SWITCHABLE_LAYOUT_IDS.map((layoutId) => {
+                    const layout = getLayout(layoutId);
+                    const active = selected.layoutId === layoutId;
+                    return (
+                      <button
+                        key={layoutId}
+                        type="button"
+                        disabled={busy}
+                        aria-pressed={active}
+                        onClick={() => handleLayoutChange(layoutId)}
+                        className={cn(
+                          "rounded-sm px-3 py-1.5 text-xs font-medium transition-colors",
+                          active
+                            ? "bg-muted text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {layout.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               {pageOverflowing ? (
                 <div
                   role="status"
@@ -268,7 +333,7 @@ export function TemplatesEditor({
                   onRemoveItem={handleRemoveItem}
                 />
               </LetterShell>
-            </>
+            </div>
           ) : (
             <div className="flex min-h-64 items-center justify-center text-sm text-muted-foreground">
               No templates yet
