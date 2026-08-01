@@ -87,7 +87,8 @@ export function ProjectsEditor({
     : { ok: false as const, reason: "Generate first" };
 
   useEffect(() => {
-    const LETTER_CONTENT_PX = 11 * 96 - 2 * 0.4 * 96 - 2 * 0.5 * 96;
+    // Full 11in sheet (@page margin 0); content inset is 0.5in per side in print.css
+    const LETTER_CONTENT_PX = 11 * 96 - 2 * 0.5 * 96;
 
     function applyPrintScale() {
       const root = document.querySelector("[data-print-root]");

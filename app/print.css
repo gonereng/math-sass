@@ -1,6 +1,6 @@
 @page {
   size: letter;
-  margin: 0.4in;
+  margin: 0;
 }
 
 @media print {
@@ -20,9 +20,15 @@
     overflow: visible !important;
   }
 
+  [data-sonner-toaster],
+  .toaster {
+    display: none !important;
+  }
+
   /* Non-print UI inside projects editor (wired in Task 3 via data-print-hide) */
   [data-print-root] {
     display: block !important;
+    padding: 0 !important;
     gap: 0 !important;
   }
 
