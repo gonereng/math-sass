@@ -1,12 +1,5 @@
-import { EmptyStatePage } from "@/components/empty-state-page";
+import { ProblemsCatalog } from "@/components/problems/problems-catalog";
 
 export default function ProblemsPage() {
-  return (
-    <EmptyStatePage
-      title="Problems"
-      description="Your reusable problem bank."
-      emptyMessage="Your problem bank is empty"
-      actionLabel="New problem"
-    />
-  );
+  return <ProblemsCatalog />;
 }
