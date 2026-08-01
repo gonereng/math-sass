@@ -44,6 +44,11 @@ export function TemplatesEditor({
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pageOverflowing, setPageOverflowing] = useState(false);
+
+  useEffect(() => {
+    setPageOverflowing(false);
+  }, [selectedId]);
 
   useEffect(() => {
     setTemplates(initialTemplates);
@@ -248,12 +253,22 @@ export function TemplatesEditor({
 
         <section className="min-w-0 flex-1 overflow-auto px-2">
           {selected ? (
-            <LetterShell>
-              <TemplateCanvas
-                template={selected}
-                onRemoveItem={handleRemoveItem}
-              />
-            </LetterShell>
+            <>
+              {pageOverflowing ? (
+                <div
+                  role="status"
+                  className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+                >
+                  Content exceeds one page
+                </div>
+              ) : null}
+              <LetterShell onOverflowChange={setPageOverflowing}>
+                <TemplateCanvas
+                  template={selected}
+                  onRemoveItem={handleRemoveItem}
+                />
+              </LetterShell>
+            </>
           ) : (
             <div className="flex min-h-64 items-center justify-center text-sm text-muted-foreground">
               No templates yet
