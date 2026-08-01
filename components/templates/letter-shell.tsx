@@ -25,16 +25,16 @@ export function LetterShellView({
   pageRef?: Ref<HTMLDivElement>;
 }) {
   return (
-    <div className={cn("relative mx-auto w-full max-w-[52rem]", className)}>
+    <div className={cn("letter-shell relative mx-auto w-full max-w-[52rem]", className)}>
       <div
         ref={pageRef}
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 aspect-[8.5/11] border-2 border-black bg-white"
+        className="letter-shell__silhouette pointer-events-none absolute inset-x-0 top-0 z-0 aspect-[8.5/11] border-2 border-black bg-white"
       />
 
       <div
         ref={contentRef}
-        className="relative z-10 p-8 text-black"
+        className="letter-shell__content relative z-10 p-8 text-black"
         style={pageHeight > 0 ? { minHeight: pageHeight } : undefined}
       >
         <header className="mb-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">

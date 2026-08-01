@@ -16,7 +16,7 @@ export function AppSidebar({ email }: { email: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r bg-background">
+    <aside data-print-hide className="flex h-screen w-60 flex-col border-r bg-background">
       <div className="border-b px-4 py-5">
         <Link href="/dashboard" className="text-lg font-semibold tracking-tight">
           MathSheets

@@ -1,0 +1,79 @@
+@page {
+  size: letter;
+  margin: 0.4in;
+}
+
+@media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  /* App chrome: padding/scroll that fights pagination */
+  body {
+    background: white !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Non-print UI inside projects editor (wired in Task 3 via data-print-hide) */
+  [data-print-root] {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  .print-page {
+    width: 8.5in;
+    height: 11in;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+    box-shadow: none !important;
+  }
+
+  .print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  /* Override screen LetterShell scaling with physical letter box */
+  .print-page.letter-shell,
+  .print-page .letter-shell {
+    width: 8.5in !important;
+    max-width: none !important;
+    height: 11in !important;
+  }
+
+  .print-page .letter-shell__silhouette {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: auto !important;
+    border-width: 2px !important;
+    border-color: black !important;
+    background: white !important;
+  }
+
+  .print-page .letter-shell__content {
+    min-height: 0 !important;
+    height: 100% !important;
+    box-sizing: border-box;
+    padding: 0.5in !important;
+    transform-origin: top left;
+    /* --print-scale set by JS on beforeprint when needed; default 1 */
+    transform: scale(var(--print-scale, 1));
+  }
+
+  /* Hide overflow wash in print */
+  [data-overflow-wash] {
+    display: none !important;
+  }
+}
