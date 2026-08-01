@@ -37,3 +37,15 @@ export function getLayout(layoutId: string): LayoutPreset {
   }
   return found;
 }
+
+export function getLayoutClassName(layoutId: string): string {
+  switch (getLayout(layoutId).id) {
+    case "two-columns":
+      return "grid grid-cols-2 gap-4";
+    case "grid-2x2":
+      return "grid grid-cols-2 grid-rows-2 gap-4";
+    case "single-column":
+    default:
+      return "flex flex-col gap-4";
+  }
+}
