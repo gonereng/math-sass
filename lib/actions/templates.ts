@@ -25,6 +25,8 @@ export type TemplateWithItems = {
     problemTypeId: string;
     props: unknown;
     sortOrder: number;
+    rangeMin: number | null;
+    rangeMax: number | null;
   }[];
 };
 
@@ -42,6 +44,8 @@ function mapTemplate(template: {
     problemTypeId: string;
     props: unknown;
     sortOrder: number;
+    rangeMin: number | null;
+    rangeMax: number | null;
   }[];
 }): TemplateWithItems {
   return {
@@ -54,6 +58,8 @@ function mapTemplate(template: {
       problemTypeId: item.problemTypeId,
       props: item.props,
       sortOrder: item.sortOrder,
+      rangeMin: item.rangeMin,
+      rangeMax: item.rangeMax,
     })),
   };
 }
@@ -160,6 +166,8 @@ export async function addTemplateItem(input: {
         problemTypeId: string;
         props: unknown;
         sortOrder: number;
+        rangeMin: number | null;
+        rangeMax: number | null;
       };
     }
   | ActionError
@@ -218,6 +226,8 @@ export async function addTemplateItem(input: {
         problemTypeId: input.problemTypeId,
         props,
         sortOrder,
+        rangeMin: min,
+        rangeMax: max,
       },
     });
 
@@ -229,6 +239,8 @@ export async function addTemplateItem(input: {
         problemTypeId: item.problemTypeId,
         props: item.props,
         sortOrder: item.sortOrder,
+        rangeMin: item.rangeMin,
+        rangeMax: item.rangeMax,
       },
     };
   } catch {

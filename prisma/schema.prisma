@@ -78,6 +78,8 @@ model TemplateItem {
   problemTypeId String
   props         Json
   sortOrder     Int
+  rangeMin      Int?
+  rangeMax      Int?
   template      Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@index([templateId, boxId, sortOrder])
