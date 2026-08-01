@@ -1,12 +1,17 @@
-import { EmptyStatePage } from "@/components/empty-state-page";
+import { ProjectsEditor } from "@/components/projects/projects-editor";
+import { listProjects } from "@/lib/actions/projects";
+import { ensureSampleTemplate } from "@/lib/actions/templates";
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const [projects, templates] = await Promise.all([
+    listProjects(),
+    ensureSampleTemplate(),
+  ]);
+
   return (
-    <EmptyStatePage
-      title="Projects"
-      description="Workbooks and sheet collections."
-      emptyMessage="No projects yet"
-      actionLabel="New project"
+    <ProjectsEditor
+      initialProjects={projects}
+      templates={templates.map((t) => ({ id: t.id, name: t.name }))}
     />
   );
 }
