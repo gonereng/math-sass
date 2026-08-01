@@ -17,7 +17,10 @@ import { minMaxSchema } from "@/lib/validations/template";
 type MinMaxDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (values: { min: number; max: number }) => void;
+  onConfirm: (values: {
+    min: number;
+    max: number;
+  }) => boolean | Promise<boolean>;
   problemTypeName?: string;
 };
 
@@ -30,6 +33,7 @@ export function MinMaxDialog({
   const [min, setMin] = useState("1");
   const [max, setMax] = useState("10");
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -39,7 +43,7 @@ export function MinMaxDialog({
     }
   }, [open]);
 
-  function handleConfirm() {
+  async function handleConfirm() {
     const parsed = minMaxSchema.safeParse({ min, max });
     if (!parsed.success) {
       setError(
@@ -47,8 +51,15 @@ export function MinMaxDialog({
       );
       return;
     }
-    onConfirm(parsed.data);
-    onOpenChange(false);
+    setPending(true);
+    try {
+      const success = await onConfirm(parsed.data);
+      if (success) {
+        onOpenChange(false);
+      }
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -93,11 +104,12 @@ export function MinMaxDialog({
           <Button
             type="button"
             variant="outline"
+            disabled={pending}
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
-          <Button type="button" onClick={handleConfirm}>
+          <Button type="button" disabled={pending} onClick={handleConfirm}>
             Add
           </Button>
         </DialogFooter>

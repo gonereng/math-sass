@@ -24,6 +24,7 @@ import {
   type TemplateWithItems,
 } from "@/lib/actions/templates";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type PendingDrop = {
   boxId: string;
@@ -70,7 +71,10 @@ export function TemplatesEditor({
     setBusy(true);
     try {
       const result = await createTemplate();
-      if (!result.ok) return;
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       setTemplates((prev) => [...prev, result.template]);
       setSelectedId(result.template.id);
     } finally {
@@ -91,6 +95,7 @@ export function TemplatesEditor({
     const result = await removeTemplateItem({ id });
     if (!result.ok) {
       setTemplates(previous);
+      toast.error(result.error);
     }
   }
 
@@ -100,8 +105,8 @@ export function TemplatesEditor({
   }: {
     min: number;
     max: number;
-  }) {
-    if (!selected || !pendingDrop) return;
+  }): Promise<boolean> {
+    if (!selected || !pendingDrop) return false;
     setBusy(true);
     try {
       const result = await addTemplateItem({
@@ -111,7 +116,10 @@ export function TemplatesEditor({
         min,
         max,
       });
-      if (!result.ok) return;
+      if (!result.ok) {
+        toast.error(result.error);
+        return false;
+      }
       setTemplates((prev) =>
         prev.map((t) =>
           t.id === selected.id
@@ -119,8 +127,9 @@ export function TemplatesEditor({
             : t,
         ),
       );
-    } finally {
       setPendingDrop(null);
+      return true;
+    } finally {
       setBusy(false);
     }
   }
@@ -188,6 +197,7 @@ export function TemplatesEditor({
     });
     if (!result.ok) {
       setTemplates(previous);
+      toast.error(result.error);
     }
   }
 
