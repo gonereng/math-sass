@@ -17,4 +17,12 @@ describe("isPageOverflowing", () => {
   it("is false when page height is zero (not yet measured)", () => {
     expect(isPageOverflowing(500, 0)).toBe(false);
   });
+
+  it("is false for subpixel scrollHeight vs float page height (minHeight coupling)", () => {
+    expect(isPageOverflowing(1001, 1000.4)).toBe(false);
+  });
+
+  it("is true when content clearly exceeds page after epsilon slack", () => {
+    expect(isPageOverflowing(1002, 1000.4)).toBe(true);
+  });
 });

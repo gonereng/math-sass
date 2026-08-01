@@ -16,7 +16,7 @@ export function usePageOverflow(
     if (!pageEl || !contentEl) return;
 
     const measure = () => {
-      setPageHeight(pageEl.getBoundingClientRect().height);
+      setPageHeight(Math.floor(pageEl.getBoundingClientRect().height));
       setContentHeight(contentEl.scrollHeight);
     };
 
