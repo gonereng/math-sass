@@ -16,6 +16,7 @@ model User {
   password      String
   accounts      Account[]
   sessions      Session[]
+  templates     Template[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -55,4 +56,29 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+model Template {
+  id        String         @id @default(cuid())
+  userId    String
+  name      String
+  layoutId  String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     TemplateItem[]
+
+  @@index([userId])
+}
+
+model TemplateItem {
+  id            String   @id @default(cuid())
+  templateId    String
+  boxId         String
+  problemTypeId String
+  props         Json
+  sortOrder     Int
+  template      Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, boxId, sortOrder])
 }
