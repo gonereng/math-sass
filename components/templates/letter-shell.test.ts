@@ -1,12 +1,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LetterShell } from "./letter-shell";
+import { LetterShellView } from "./letter-shell";
 
-describe("LetterShell", () => {
+describe("LetterShellView", () => {
   it("renders Name/Class/Date blanks", () => {
     const html = renderToStaticMarkup(
-      createElement(LetterShell, null, createElement("div", null, "body")),
+      createElement(LetterShellView, null, createElement("div", null, "body")),
     );
     expect(html).toContain("Name");
     expect(html).toContain("Class");
@@ -15,7 +15,7 @@ describe("LetterShell", () => {
 
   it("does not render overflow wash when not overflowing", () => {
     const html = renderToStaticMarkup(
-      createElement(LetterShell, { overflowing: false }, "x"),
+      createElement(LetterShellView, { overflowing: false }, "x"),
     );
     expect(html).not.toContain('data-overflow-wash="true"');
   });
@@ -23,7 +23,7 @@ describe("LetterShell", () => {
   it("renders overflow wash when overflowing", () => {
     const html = renderToStaticMarkup(
       createElement(
-        LetterShell,
+        LetterShellView,
         { overflowing: true, pageHeight: 400 },
         "x",
       ),

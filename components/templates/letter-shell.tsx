@@ -1,11 +1,14 @@
-import type { ReactNode, Ref } from "react";
+"use client";
+
+import { useEffect, useRef, type ReactNode, type Ref } from "react";
+import { usePageOverflow } from "@/components/templates/use-page-overflow";
 import { cn } from "@/lib/utils";
 
 /**
  * Editor letter page: fixed 8.5×11 silhouette (scaled to column width).
  * Print/PDF later should use real 8.5in×11in — do not treat this scaled box as print truth.
  */
-export function LetterShell({
+export function LetterShellView({
   children,
   className,
   overflowing = false,
@@ -22,17 +25,13 @@ export function LetterShell({
   pageRef?: Ref<HTMLDivElement>;
 }) {
   return (
-    <div
-      className={cn("relative mx-auto w-full max-w-[52rem]", className)}
-    >
-      {/* Visible one-page outline; does not grow with content */}
+    <div className={cn("relative mx-auto w-full max-w-[52rem]", className)}>
       <div
         ref={pageRef}
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 z-0 aspect-[8.5/11] border-2 border-black bg-white"
       />
 
-      {/* In-flow content; may extend below the silhouette */}
       <div
         ref={contentRef}
         className="relative z-10 p-8 text-black"
@@ -55,6 +54,36 @@ export function LetterShell({
         />
       ) : null}
     </div>
+  );
+}
+
+export function LetterShell({
+  children,
+  className,
+  onOverflowChange,
+}: {
+  children: ReactNode;
+  className?: string;
+  onOverflowChange?: (overflowing: boolean) => void;
+}) {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { overflowing, pageHeight } = usePageOverflow(pageRef, contentRef);
+
+  useEffect(() => {
+    onOverflowChange?.(overflowing);
+  }, [overflowing, onOverflowChange]);
+
+  return (
+    <LetterShellView
+      className={className}
+      overflowing={overflowing}
+      pageHeight={pageHeight}
+      pageRef={pageRef}
+      contentRef={contentRef}
+    >
+      {children}
+    </LetterShellView>
   );
 }
 
