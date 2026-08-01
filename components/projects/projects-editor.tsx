@@ -15,6 +15,7 @@ import {
   updateSectionPageCount,
   type ProjectWithDetails,
 } from "@/lib/actions/projects";
+import { canExportPdf } from "@/lib/projects/can-export-pdf";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -77,6 +78,46 @@ export function ProjectsEditor({
     selected.pages.length > 0 &&
     selected.lastGeneratedFingerprint !== null &&
     selected.lastGeneratedFingerprint !== currentFingerprint;
+  const exportGate = selected
+    ? canExportPdf({
+        pageCount: selected.pages.length,
+        fingerprint: currentFingerprint,
+        lastGeneratedFingerprint: selected.lastGeneratedFingerprint,
+      })
+    : { ok: false as const, reason: "Generate first" };
+
+  useEffect(() => {
+    const LETTER_CONTENT_PX = 11 * 96 - 2 * 0.4 * 96 - 2 * 0.5 * 96;
+
+    function applyPrintScale() {
+      const root = document.querySelector("[data-print-root]");
+      if (!root) return;
+      const pages = root.querySelectorAll<HTMLElement>(".print-page");
+      pages.forEach((page) => {
+        const content = page.querySelector<HTMLElement>(".letter-shell__content");
+        if (!content) return;
+        const contentHeight = content.scrollHeight;
+        const scale =
+          contentHeight > LETTER_CONTENT_PX
+            ? Math.min(1, (LETTER_CONTENT_PX * 0.98) / contentHeight)
+            : 1;
+        content.style.setProperty("--print-scale", String(scale));
+      });
+    }
+
+    function clearPrintScale() {
+      document
+        .querySelectorAll<HTMLElement>(".letter-shell__content")
+        .forEach((el) => el.style.removeProperty("--print-scale"));
+    }
+
+    window.addEventListener("beforeprint", applyPrintScale);
+    window.addEventListener("afterprint", clearPrintScale);
+    return () => {
+      window.removeEventListener("beforeprint", applyPrintScale);
+      window.removeEventListener("afterprint", clearPrintScale);
+    };
+  }, [selected?.id, selected?.pages.length, selected?.lastGeneratedFingerprint]);
 
   async function handleNewProject() {
     setBusy(true);
@@ -215,7 +256,10 @@ export function ProjectsEditor({
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] gap-4">
-      <aside className="flex w-56 shrink-0 flex-col gap-3 border-r pr-4">
+      <aside
+        data-print-hide
+        className="flex w-56 shrink-0 flex-col gap-3 border-r pr-4"
+      >
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Projects</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -264,7 +308,10 @@ export function ProjectsEditor({
         </ul>
       </aside>
 
-      <aside className="flex w-64 shrink-0 flex-col gap-3 border-r pr-4">
+      <aside
+        data-print-hide
+        className="flex w-64 shrink-0 flex-col gap-3 border-r pr-4"
+      >
         {selected ? (
           <>
             <h2 className="text-sm font-medium">Sections</h2>
@@ -378,13 +425,24 @@ export function ProjectsEditor({
       <section className="min-w-0 flex-1 overflow-auto px-2">
         {selected ? (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
+            <div
+              data-print-hide
+              className="flex flex-wrap items-center gap-3"
+            >
               <Button
                 type="button"
                 disabled={busy || selected.sections.length === 0}
                 onClick={handleGenerate}
               >
                 Generate
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy || !exportGate.ok}
+                onClick={() => window.print()}
+              >
+                Export PDF
               </Button>
               {stale ? (
                 <p
@@ -394,15 +452,23 @@ export function ProjectsEditor({
                   Preview may be stale — generate again
                 </p>
               ) : null}
+              {!exportGate.ok && selected && !stale ? (
+                <p className="text-sm text-muted-foreground">
+                  {exportGate.reason}
+                </p>
+              ) : null}
             </div>
             {selected.pages.length === 0 ? (
-              <div className="flex min-h-64 items-center justify-center text-sm text-muted-foreground">
+              <div
+                data-print-hide
+                className="flex min-h-64 items-center justify-center text-sm text-muted-foreground"
+              >
                 Generate to preview pages
               </div>
             ) : (
-              <div className="flex flex-col gap-8 pb-8">
+              <div className="flex flex-col gap-8 pb-8" data-print-root>
                 {selected.pages.map((page) => (
-                  <LetterShell key={page.id}>
+                  <LetterShell key={page.id} className="print-page">
                     <WorksheetPageView
                       layoutId={page.layoutId}
                       items={page.items}
