@@ -24,17 +24,19 @@ type TemplateOption = { id: string; name: string };
 
 export function ProjectsEditor({
   initialProject,
-  templates,
+  templates = [],
 }: {
   initialProject: ProjectWithDetails;
-  templates: TemplateOption[];
+  templates?: TemplateOption[];
 }) {
   const router = useRouter();
   const [project, setProject] = useState(initialProject);
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
   );
-  const [addTemplateId, setAddTemplateId] = useState(templates[0]?.id ?? "");
+  const [addTemplateId, setAddTemplateId] = useState(
+    () => templates?.[0]?.id ?? "",
+  );
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -46,18 +48,22 @@ export function ProjectsEditor({
   }, [project.id]);
 
   useEffect(() => {
-    if (!addTemplateId && templates[0]) {
-      setAddTemplateId(templates[0].id);
+    const firstId = templates?.[0]?.id;
+    if (!addTemplateId && firstId) {
+      setAddTemplateId(firstId);
     }
   }, [templates, addTemplateId]);
 
-  const currentFingerprint = compositionFingerprint(project.sections);
+  const sections = project.sections ?? [];
+  const pages = project.pages ?? [];
+
+  const currentFingerprint = compositionFingerprint(sections);
   const stale =
-    project.pages.length > 0 &&
+    pages.length > 0 &&
     project.lastGeneratedFingerprint !== null &&
     project.lastGeneratedFingerprint !== currentFingerprint;
   const exportGate = canExportPdf({
-    pageCount: project.pages.length,
+    pageCount: pages.length,
     fingerprint: currentFingerprint,
     lastGeneratedFingerprint: project.lastGeneratedFingerprint,
   });
@@ -95,7 +101,7 @@ export function ProjectsEditor({
       window.removeEventListener("beforeprint", applyPrintScale);
       window.removeEventListener("afterprint", clearPrintScale);
     };
-  }, [project.id, project.pages.length, project.lastGeneratedFingerprint]);
+  }, [project.id, pages.length, project.lastGeneratedFingerprint]);
 
   async function handleDeleteProject() {
     setBusy(true);
@@ -243,7 +249,7 @@ export function ProjectsEditor({
         >
           <h2 className="text-sm font-medium">Sections</h2>
           <ul className="flex flex-col gap-2">
-            {project.sections.map((section, index) => {
+            {sections.map((section, index) => {
               const expanded = expandedSectionId === section.id;
               const name = section.templateSnapshot.templateName;
               return (
@@ -291,7 +297,7 @@ export function ProjectsEditor({
                           size="sm"
                           variant="outline"
                           disabled={
-                            busy || index === project.sections.length - 1
+                            busy || index === sections.length - 1
                           }
                           onClick={() => handleMoveSection(section.id, "down")}
                         >
@@ -342,7 +348,7 @@ export function ProjectsEditor({
             <div data-print-hide className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
-                disabled={busy || project.sections.length === 0}
+                disabled={busy || sections.length === 0}
                 onClick={handleGenerate}
               >
                 Generate
@@ -369,7 +375,7 @@ export function ProjectsEditor({
                 </p>
               ) : null}
             </div>
-            {project.pages.length === 0 ? (
+            {pages.length === 0 ? (
               <div
                 data-print-hide
                 className="flex min-h-64 items-center justify-center text-sm text-muted-foreground"
@@ -378,7 +384,7 @@ export function ProjectsEditor({
               </div>
             ) : (
               <div className="flex flex-col gap-8 pb-8" data-print-root>
-                {project.pages.map((page) => (
+                {pages.map((page) => (
                   <LetterShell key={page.id} className="print-page">
                     <WorksheetPageView
                       layoutId={page.layoutId}

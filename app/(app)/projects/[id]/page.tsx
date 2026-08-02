@@ -15,10 +15,15 @@ export default async function ProjectDetailPage({
   ]);
   if (!project) notFound();
 
+  const templateOptions = (templates ?? []).map((t) => ({
+    id: t.id,
+    name: t.name,
+  }));
+
   return (
     <ProjectsEditor
       initialProject={project}
-      templates={templates.map((t) => ({ id: t.id, name: t.name }))}
+      templates={templateOptions}
     />
   );
 }
