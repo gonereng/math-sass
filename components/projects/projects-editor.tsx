@@ -259,12 +259,14 @@ export function ProjectsEditor({
     <div className="flex min-h-[calc(100vh-4rem)] gap-4">
       <aside
         data-print-hide
-        className="flex w-56 shrink-0 flex-col gap-3 border-r pr-4"
+        className="flex w-56 shrink-0 flex-col gap-3 border-r border-border pr-4"
       >
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">Projects</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Compose workbook pages
+          <h1 className="text-lg font-semibold tracking-tight text-foreground">
+            Projects
+          </h1>
+          <p className="mt-0.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+            Workbooks
           </p>
         </div>
         <Button
@@ -286,7 +288,7 @@ export function ProjectsEditor({
             Delete project
           </Button>
         ) : null}
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col gap-0.5">
           {projects.map((project) => {
             const active = project.id === selectedId;
             return (
@@ -295,10 +297,10 @@ export function ProjectsEditor({
                   type="button"
                   onClick={() => setSelectedId(project.id)}
                   className={cn(
-                    "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
+                    "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                     active
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      ? "border border-border bg-card font-medium text-foreground shadow-[inset_3px_0_0_0_var(--primary)]"
+                      : "border border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                   )}
                 >
                   {project.name}
