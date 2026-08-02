@@ -35,6 +35,7 @@ export type GeneratedPageItem = {
 export type ProjectWithDetails = {
   id: string;
   name: string;
+  updatedAt: string;
   lastGeneratedFingerprint: string | null;
   sections: {
     id: string;
@@ -66,6 +67,7 @@ function parseSnapshot(raw: unknown): TemplateSnapshot {
 function mapProject(project: {
   id: string;
   name: string;
+  updatedAt: Date;
   lastGeneratedFingerprint: string | null;
   sections: {
     id: string;
@@ -85,6 +87,7 @@ function mapProject(project: {
   return {
     id: project.id,
     name: project.name,
+    updatedAt: project.updatedAt.toISOString(),
     lastGeneratedFingerprint: project.lastGeneratedFingerprint,
     sections: project.sections
       .slice()
@@ -129,6 +132,14 @@ export async function listProjects(): Promise<ProjectWithDetails[]> {
     orderBy: { updatedAt: "desc" },
   });
   return projects.map(mapProject);
+}
+
+export async function getProject(
+  projectId: string,
+): Promise<ProjectWithDetails | null> {
+  const userId = await requireUserId();
+  if (!userId) return null;
+  return loadProjectForUser(projectId, userId);
 }
 
 export async function createProject(

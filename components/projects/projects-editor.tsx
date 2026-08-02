@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LetterShell } from "@/components/templates/letter-shell";
 import { WorksheetPageView } from "@/components/worksheets/worksheet-page-view";
@@ -7,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   addProjectSection,
-  createProject,
   deleteProject,
   generateProject,
   removeProjectSection,
@@ -17,50 +18,32 @@ import {
 } from "@/lib/actions/projects";
 import { canExportPdf } from "@/lib/projects/can-export-pdf";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type TemplateOption = { id: string; name: string };
 
-function replaceProject(
-  projects: ProjectWithDetails[],
-  updated: ProjectWithDetails,
-): ProjectWithDetails[] {
-  return projects.map((p) => (p.id === updated.id ? updated : p));
-}
-
 export function ProjectsEditor({
-  initialProjects,
+  initialProject,
   templates,
 }: {
-  initialProjects: ProjectWithDetails[];
+  initialProject: ProjectWithDetails;
   templates: TemplateOption[];
 }) {
-  const [projects, setProjects] = useState(initialProjects);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialProjects[0]?.id ?? null,
-  );
+  const router = useRouter();
+  const [project, setProject] = useState(initialProject);
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
   );
-  const [addTemplateId, setAddTemplateId] = useState(
-    templates[0]?.id ?? "",
-  );
+  const [addTemplateId, setAddTemplateId] = useState(templates[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setProjects(initialProjects);
-    setSelectedId((current) => {
-      if (current && initialProjects.some((p) => p.id === current)) {
-        return current;
-      }
-      return initialProjects[0]?.id ?? null;
-    });
-  }, [initialProjects]);
+    setProject(initialProject);
+  }, [initialProject]);
 
   useEffect(() => {
     setExpandedSectionId(null);
-  }, [selectedId]);
+  }, [project.id]);
 
   useEffect(() => {
     if (!addTemplateId && templates[0]) {
@@ -68,26 +51,18 @@ export function ProjectsEditor({
     }
   }, [templates, addTemplateId]);
 
-  const selected = projects.find((p) => p.id === selectedId) ?? null;
-
-  const currentFingerprint = selected
-    ? compositionFingerprint(selected.sections)
-    : "";
+  const currentFingerprint = compositionFingerprint(project.sections);
   const stale =
-    !!selected &&
-    selected.pages.length > 0 &&
-    selected.lastGeneratedFingerprint !== null &&
-    selected.lastGeneratedFingerprint !== currentFingerprint;
-  const exportGate = selected
-    ? canExportPdf({
-        pageCount: selected.pages.length,
-        fingerprint: currentFingerprint,
-        lastGeneratedFingerprint: selected.lastGeneratedFingerprint,
-      })
-    : { ok: false as const, reason: "Generate first" };
+    project.pages.length > 0 &&
+    project.lastGeneratedFingerprint !== null &&
+    project.lastGeneratedFingerprint !== currentFingerprint;
+  const exportGate = canExportPdf({
+    pageCount: project.pages.length,
+    fingerprint: currentFingerprint,
+    lastGeneratedFingerprint: project.lastGeneratedFingerprint,
+  });
 
   useEffect(() => {
-    // Full 11in sheet (@page margin 0); content inset is 0.5in per side in print.css
     const LETTER_CONTENT_PX = 11 * 96 - 2 * 0.5 * 96;
 
     function applyPrintScale() {
@@ -95,7 +70,9 @@ export function ProjectsEditor({
       if (!root) return;
       const pages = root.querySelectorAll<HTMLElement>(".print-page");
       pages.forEach((page) => {
-        const content = page.querySelector<HTMLElement>(".letter-shell__content");
+        const content = page.querySelector<HTMLElement>(
+          ".letter-shell__content",
+        );
         if (!content) return;
         const contentHeight = content.scrollHeight;
         const scale =
@@ -118,49 +95,29 @@ export function ProjectsEditor({
       window.removeEventListener("beforeprint", applyPrintScale);
       window.removeEventListener("afterprint", clearPrintScale);
     };
-  }, [selected?.id, selected?.pages.length, selected?.lastGeneratedFingerprint]);
-
-  async function handleNewProject() {
-    setBusy(true);
-    try {
-      const result = await createProject();
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      setProjects((prev) => [result.project, ...prev]);
-      setSelectedId(result.project.id);
-    } finally {
-      setBusy(false);
-    }
-  }
+  }, [project.id, project.pages.length, project.lastGeneratedFingerprint]);
 
   async function handleDeleteProject() {
-    if (!selected) return;
-    const deletedId = selected.id;
     setBusy(true);
     try {
-      const result = await deleteProject({ projectId: deletedId });
+      const result = await deleteProject({ projectId: project.id });
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      const nextProjects = projects.filter((p) => p.id !== deletedId);
-      setProjects(nextProjects);
-      setSelectedId((current) =>
-        current !== deletedId ? current : (nextProjects[0]?.id ?? null),
-      );
+      router.push("/projects");
+      router.refresh();
     } finally {
       setBusy(false);
     }
   }
 
   async function handleAddSection() {
-    if (!selected || !addTemplateId) return;
+    if (!addTemplateId) return;
     setBusy(true);
     try {
       const result = await addProjectSection({
-        projectId: selected.id,
+        projectId: project.id,
         templateId: addTemplateId,
         pageCount: 1,
       });
@@ -168,14 +125,13 @@ export function ProjectsEditor({
         toast.error(result.error);
         return;
       }
-      setProjects((prev) => replaceProject(prev, result.project));
+      setProject(result.project);
     } finally {
       setBusy(false);
     }
   }
 
   async function handleRemoveSection(sectionId: string) {
-    if (!selected) return;
     setBusy(true);
     try {
       const result = await removeProjectSection({ sectionId });
@@ -183,7 +139,7 @@ export function ProjectsEditor({
         toast.error(result.error);
         return;
       }
-      setProjects((prev) => replaceProject(prev, result.project));
+      setProject(result.project);
       setExpandedSectionId((current) =>
         current === sectionId ? null : current,
       );
@@ -192,11 +148,7 @@ export function ProjectsEditor({
     }
   }
 
-  async function handlePageCountChange(
-    sectionId: string,
-    pageCount: number,
-  ) {
-    if (!selected) return;
+  async function handlePageCountChange(sectionId: string, pageCount: number) {
     setBusy(true);
     try {
       const result = await updateSectionPageCount({ sectionId, pageCount });
@@ -204,15 +156,17 @@ export function ProjectsEditor({
         toast.error(result.error);
         return;
       }
-      setProjects((prev) => replaceProject(prev, result.project));
+      setProject(result.project);
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleMoveSection(sectionId: string, direction: "up" | "down") {
-    if (!selected) return;
-    const sections = selected.sections;
+  async function handleMoveSection(
+    sectionId: string,
+    direction: "up" | "down",
+  ) {
+    const sections = project.sections;
     const index = sections.findIndex((s) => s.id === sectionId);
     if (index === -1) return;
     const swapIndex = direction === "up" ? index - 1 : index + 1;
@@ -227,214 +181,168 @@ export function ProjectsEditor({
     setBusy(true);
     try {
       const result = await reorderProjectSections({
-        projectId: selected.id,
+        projectId: project.id,
         sectionIds,
       });
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      setProjects((prev) => replaceProject(prev, result.project));
+      setProject(result.project);
     } finally {
       setBusy(false);
     }
   }
 
   async function handleGenerate() {
-    if (!selected) return;
     setBusy(true);
     try {
-      const result = await generateProject({ projectId: selected.id });
+      const result = await generateProject({ projectId: project.id });
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      setProjects((prev) => replaceProject(prev, result.project));
+      setProject(result.project);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] gap-4">
-      <aside
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4">
+      <div
         data-print-hide
-        className="flex w-56 shrink-0 flex-col gap-3 border-r border-border pr-4"
+        className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
       >
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight text-foreground">
-            Projects
+        <div className="space-y-1">
+          <Link
+            href="/projects"
+            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            ← All projects
+          </Link>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {project.name}
           </h1>
-          <p className="mt-0.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
-            Workbooks
-          </p>
         </div>
         <Button
           type="button"
           size="sm"
+          variant="outline"
           disabled={busy}
-          onClick={handleNewProject}
+          onClick={handleDeleteProject}
         >
-          New project
+          Delete project
         </Button>
-        {selected ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={handleDeleteProject}
-          >
-            Delete project
-          </Button>
-        ) : null}
-        <ul className="flex flex-col gap-0.5">
-          {projects.map((project) => {
-            const active = project.id === selectedId;
-            return (
-              <li key={project.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(project.id)}
-                  className={cn(
-                    "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                    active
-                      ? "border border-border bg-card font-medium text-foreground shadow-[inset_3px_0_0_0_var(--primary)]"
-                      : "border border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                  )}
+      </div>
+
+      <div className="flex min-h-0 flex-1 gap-4">
+        <aside
+          data-print-hide
+          className="flex w-64 shrink-0 flex-col gap-3 border-r border-border pr-4"
+        >
+          <h2 className="text-sm font-medium">Sections</h2>
+          <ul className="flex flex-col gap-2">
+            {project.sections.map((section, index) => {
+              const expanded = expandedSectionId === section.id;
+              const name = section.templateSnapshot.templateName;
+              return (
+                <li
+                  key={section.id}
+                  className="rounded-md border border-border"
                 >
-                  {project.name}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </aside>
-
-      <aside
-        data-print-hide
-        className="flex w-64 shrink-0 flex-col gap-3 border-r pr-4"
-      >
-        {selected ? (
-          <>
-            <h2 className="text-sm font-medium">Sections</h2>
-            <ul className="flex flex-col gap-2">
-              {selected.sections.map((section, index) => {
-                const expanded = expandedSectionId === section.id;
-                const name = section.templateSnapshot.templateName;
-                return (
-                  <li
-                    key={section.id}
-                    className="rounded-md border border-border"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedSectionId(expanded ? null : section.id)
+                    }
+                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm"
                   >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedSectionId(expanded ? null : section.id)
-                      }
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm"
-                    >
-                      <span className="truncate font-medium">{name}</span>
-                      <span className="ml-2 shrink-0 text-muted-foreground">
-                        ×{section.pageCount}
-                      </span>
-                    </button>
-                    {expanded ? (
-                      <div className="flex flex-col gap-2 border-t px-3 py-2">
-                        <label className="flex flex-col gap-1 text-xs">
-                          <span className="text-muted-foreground">
-                            Page count
-                          </span>
-                          <SectionPageCountInput
-                            key={section.id}
-                            value={section.pageCount}
-                            disabled={busy}
-                            onCommit={(pageCount) =>
-                              handlePageCountChange(section.id, pageCount)
-                            }
-                          />
-                        </label>
-                        <div className="flex flex-wrap gap-1">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={busy || index === 0}
-                            onClick={() =>
-                              handleMoveSection(section.id, "up")
-                            }
-                          >
-                            Up
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={
-                              busy || index === selected.sections.length - 1
-                            }
-                            onClick={() =>
-                              handleMoveSection(section.id, "down")
-                            }
-                          >
-                            Down
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={busy}
-                            onClick={() => handleRemoveSection(section.id)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
+                    <span className="truncate font-medium">{name}</span>
+                    <span className="ml-2 shrink-0 text-muted-foreground">
+                      ×{section.pageCount}
+                    </span>
+                  </button>
+                  {expanded ? (
+                    <div className="flex flex-col gap-2 border-t px-3 py-2">
+                      <label className="flex flex-col gap-1 text-xs">
+                        <span className="text-muted-foreground">Page count</span>
+                        <SectionPageCountInput
+                          key={section.id}
+                          value={section.pageCount}
+                          disabled={busy}
+                          onCommit={(pageCount) =>
+                            handlePageCountChange(section.id, pageCount)
+                          }
+                        />
+                      </label>
+                      <div className="flex flex-wrap gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={busy || index === 0}
+                          onClick={() => handleMoveSection(section.id, "up")}
+                        >
+                          Up
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            busy || index === project.sections.length - 1
+                          }
+                          onClick={() => handleMoveSection(section.id, "down")}
+                        >
+                          Down
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => handleRemoveSection(section.id)}
+                        >
+                          Remove
+                        </Button>
                       </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="flex flex-col gap-2">
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
-                value={addTemplateId}
-                disabled={busy || templates.length === 0}
-                onChange={(e) => setAddTemplateId(e.target.value)}
-              >
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-              <Button
-                type="button"
-                size="sm"
-                disabled={busy || !addTemplateId}
-                onClick={handleAddSection}
-              >
-                Add section
-              </Button>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Select or create a project
-          </p>
-        )}
-      </aside>
-
-      <section className="min-w-0 flex-1 overflow-auto px-2">
-        {selected ? (
-          <div className="flex flex-col gap-4">
-            <div
-              data-print-hide
-              className="flex flex-wrap items-center gap-3"
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="flex flex-col gap-2">
+            <select
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+              value={addTemplateId}
+              disabled={busy || templates.length === 0}
+              onChange={(e) => setAddTemplateId(e.target.value)}
             >
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy || !addTemplateId}
+              onClick={handleAddSection}
+            >
+              Add section
+            </Button>
+          </div>
+        </aside>
+
+        <section className="min-w-0 flex-1 overflow-auto px-2">
+          <div className="flex flex-col gap-4">
+            <div data-print-hide className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
-                disabled={busy || selected.sections.length === 0}
+                disabled={busy || project.sections.length === 0}
                 onClick={handleGenerate}
               >
                 Generate
@@ -455,13 +363,13 @@ export function ProjectsEditor({
                   Preview may be stale — generate again
                 </p>
               ) : null}
-              {!exportGate.ok && selected && !stale ? (
+              {!exportGate.ok && !stale ? (
                 <p className="text-sm text-muted-foreground">
                   {exportGate.reason}
                 </p>
               ) : null}
             </div>
-            {selected.pages.length === 0 ? (
+            {project.pages.length === 0 ? (
               <div
                 data-print-hide
                 className="flex min-h-64 items-center justify-center text-sm text-muted-foreground"
@@ -470,7 +378,7 @@ export function ProjectsEditor({
               </div>
             ) : (
               <div className="flex flex-col gap-8 pb-8" data-print-root>
-                {selected.pages.map((page) => (
+                {project.pages.map((page) => (
                   <LetterShell key={page.id} className="print-page">
                     <WorksheetPageView
                       layoutId={page.layoutId}
@@ -481,12 +389,8 @@ export function ProjectsEditor({
               </div>
             )}
           </div>
-        ) : (
-          <div className="flex min-h-64 items-center justify-center text-sm text-muted-foreground">
-            No projects yet
-          </div>
-        )}
-      </section>
+        </section>
+      </div>
     </div>
   );
 }
