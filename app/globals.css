@@ -8,7 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -39,6 +39,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-rule: var(--rule);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-lowest: var(--surface-container-lowest);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +55,83 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Dashboard template: blue surface system from docs/templates/dashboard.html */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f8f9ff;
+  --foreground: #0b1c30;
+  --card: #ffffff;
+  --card-foreground: #0b1c30;
+  --popover: #ffffff;
+  --popover-foreground: #0b1c30;
+  --primary: #0058be;
+  --primary-foreground: #ffffff;
+  --secondary: #d8e2ff;
+  --secondary-foreground: #001a42;
+  --muted: #eff4ff;
+  --muted-foreground: #45464d;
+  --accent: #dce9ff;
+  --accent-foreground: #0b1c30;
+  --destructive: #ba1a1a;
+  --border: #c6c6cd;
+  --input: #c6c6cd;
+  --ring: #2170e4;
+  --ink: #0b1c30;
+  --rule: rgb(198 198 205 / 0.35);
+  --chart-1: #0058be;
+  --chart-2: #2170e4;
+  --chart-3: #45464d;
+  --chart-4: #adc6ff;
+  --chart-5: #0b1c30;
+  --radius: 0.5rem;
+  --sidebar: #eff4ff;
+  --sidebar-foreground: #0b1c30;
+  --sidebar-primary: #0058be;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d3e4fe;
+  --sidebar-accent-foreground: #0b1c30;
+  --sidebar-border: #c6c6cd;
+  --sidebar-ring: #2170e4;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --surface-container-low: #eff4ff;
+  --surface-container-lowest: #ffffff;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0b1c30;
+  --foreground: #eaf1ff;
+  --card: #213145;
+  --card-foreground: #eaf1ff;
+  --popover: #213145;
+  --popover-foreground: #eaf1ff;
+  --primary: #adc6ff;
+  --primary-foreground: #001a42;
+  --secondary: #1a3a66;
+  --secondary-foreground: #d8e2ff;
+  --muted: #213145;
+  --muted-foreground: #bec6e0;
+  --accent: #2a4060;
+  --accent-foreground: #eaf1ff;
+  --destructive: #ffb4ab;
+  --border: rgb(255 255 255 / 12%);
+  --input: rgb(255 255 255 / 14%);
+  --ring: #adc6ff;
+  --ink: #eaf1ff;
+  --rule: rgb(255 255 255 / 8%);
+  --sidebar: #132338;
+  --sidebar-foreground: #eaf1ff;
+  --sidebar-primary: #adc6ff;
+  --sidebar-primary-foreground: #001a42;
+  --sidebar-accent: #213145;
+  --sidebar-accent-foreground: #eaf1ff;
+  --sidebar-border: rgb(255 255 255 / 10%);
+  --sidebar-ring: #adc6ff;
+  --surface-container: #1a2d45;
+  --surface-container-high: #243a55;
+  --surface-container-highest: #2e4664;
+  --surface-container-low: #132338;
+  --surface-container-lowest: #0b1c30;
 }
 
 @layer base {
@@ -127,4 +144,48 @@
   html {
     @apply font-sans;
   }
+  :where(h1, h2, h3) {
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  :where(.tabular, [data-tabular]) {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+}
+
+/* Kept temporarily until chrome layouts stop referencing; Task 7 removes if unused */
+.bg-graph {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-graph-fine {
+  background-color: var(--sidebar);
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.panel-ruled {
+  @apply rounded-xl border border-border bg-card shadow-sm;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-rise {
+  animation: fade-rise 320ms ease-out both;
 }
