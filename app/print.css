@@ -49,12 +49,22 @@
     page-break-after: auto;
   }
 
-  /* Override screen LetterShell scaling with physical letter box */
+  /* Override screen LetterShell fit-scale with physical letter box */
+  .print-page.letter-shell-viewport,
+  .print-page .letter-shell-viewport {
+    width: 8.5in !important;
+    height: 11in !important;
+    max-width: none !important;
+    overflow: hidden !important;
+  }
+
   .print-page.letter-shell,
   .print-page .letter-shell {
     width: 8.5in !important;
     max-width: none !important;
+    min-height: 11in !important;
     height: 11in !important;
+    transform: none !important;
   }
 
   .print-page .letter-shell__silhouette {

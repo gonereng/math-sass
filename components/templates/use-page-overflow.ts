@@ -3,6 +3,9 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { isPageOverflowing } from "@/components/templates/page-overflow";
 
+/**
+ * Measure unscaled layout sizes (offset*) — getBoundingClientRect includes fit-scale transform.
+ */
 export function usePageOverflow(
   pageRef: RefObject<HTMLElement | null>,
   contentRef: RefObject<HTMLElement | null>,
@@ -16,11 +19,8 @@ export function usePageOverflow(
     if (!pageEl || !contentEl) return;
 
     const measure = () => {
-      const nextPageHeight = Math.floor(pageEl.getBoundingClientRect().height);
-      // contentRef is the natural-height box (no minHeight) — see LetterShellView
-      const nextContentHeight = contentEl.getBoundingClientRect().height;
-      setPageHeight(nextPageHeight);
-      setContentHeight(nextContentHeight);
+      setPageHeight(pageEl.offsetHeight);
+      setContentHeight(contentEl.offsetHeight);
     };
 
     measure();

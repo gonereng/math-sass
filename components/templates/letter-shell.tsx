@@ -1,67 +1,110 @@
 "use client";
 
-import { useLayoutEffect, useRef, type ReactNode, type Ref } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from "react";
+import {
+  LETTER_HEIGHT_IN,
+  LETTER_WIDTH_IN,
+  fitLetterScale,
+} from "@/components/templates/letter-fit-scale";
 import { usePageOverflow } from "@/components/templates/use-page-overflow";
 import { cn } from "@/lib/utils";
 
 /**
- * Editor letter page: fixed 8.5×11 silhouette (scaled to column width).
- * Print/PDF later should use real 8.5in×11in — do not treat this scaled box as print truth.
- *
- * Stage (minHeight) is separate from measured content so ResizeObserver does not
- * compare scrollHeight inflated by minHeight against a shrunk page box (false overflow).
+ * Editor letter page: fixed 8.5×11in sheet, uniformly scaled to fit the column.
+ * Fonts/padding scale with the page. Print uses real inches via print.css (no screen scale).
  */
 export function LetterShellView({
   children,
   className,
   overflowing = false,
   pageHeight = 0,
+  scale = 1,
+  stageHeight = 0,
   contentRef,
   pageRef,
+  shellRef,
+  viewportRef,
 }: {
   children: ReactNode;
   className?: string;
   overflowing?: boolean;
-  /** Measured silhouette height in px; used for stage floor and wash top. */
+  /** Unscaled silhouette height in px; wash top + overflow math. */
   pageHeight?: number;
+  /** Uniform fit scale applied to the fixed letter sheet. */
+  scale?: number;
+  /** Unscaled stage height (at least one letter page; grows with spill). */
+  stageHeight?: number;
   contentRef?: Ref<HTMLDivElement>;
   pageRef?: Ref<HTMLDivElement>;
+  shellRef?: Ref<HTMLDivElement>;
+  viewportRef?: Ref<HTMLDivElement>;
 }) {
+  const scaledHeight =
+    stageHeight > 0 ? stageHeight * scale : undefined;
+
   return (
     <div
-      className={cn("letter-shell relative mx-auto w-full max-w-[52rem]", className)}
+      ref={viewportRef}
+      className={cn("letter-shell-viewport w-full overflow-hidden", className)}
+      style={scaledHeight != null ? { height: scaledHeight } : undefined}
     >
       <div
-        ref={pageRef}
-        aria-hidden
-        className="letter-shell__silhouette pointer-events-none absolute inset-x-0 top-0 z-0 aspect-[8.5/11] border-2 border-black bg-white"
-      />
-
-      <div
-        className="relative z-10"
-        style={pageHeight > 0 ? { minHeight: pageHeight } : undefined}
+        ref={shellRef}
+        className="letter-shell relative origin-top-left bg-white text-black shadow-sm"
+        style={{
+          width: `${LETTER_WIDTH_IN}in`,
+          minHeight: `${LETTER_HEIGHT_IN}in`,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
       >
         <div
-          ref={contentRef}
-          className="letter-shell__content p-8 text-black"
-        >
-          <header className="mb-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
-            <ShellBlank label="Name" widthClass="min-w-[10rem]" />
-            <ShellBlank label="Class" widthClass="min-w-[6rem]" />
-            <ShellBlank label="Date" widthClass="min-w-[6rem]" />
-          </header>
-          <div>{children}</div>
-        </div>
-      </div>
-
-      {overflowing && pageHeight > 0 ? (
-        <div
-          data-overflow-wash="true"
+          ref={pageRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-red-500/25"
-          style={{ top: pageHeight }}
+          className="letter-shell__silhouette pointer-events-none absolute top-0 left-0 z-0 border-2 border-black bg-white"
+          style={{
+            width: `${LETTER_WIDTH_IN}in`,
+            height: `${LETTER_HEIGHT_IN}in`,
+          }}
         />
-      ) : null}
+
+        <div
+          className="relative z-10"
+          style={
+            pageHeight > 0
+              ? { minHeight: pageHeight }
+              : { minHeight: `${LETTER_HEIGHT_IN}in` }
+          }
+        >
+          <div
+            ref={contentRef}
+            className="letter-shell__content text-black"
+            style={{ padding: "0.5in" }}
+          >
+            <header className="mb-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+              <ShellBlank label="Name" widthClass="min-w-[10rem]" />
+              <ShellBlank label="Class" widthClass="min-w-[6rem]" />
+              <ShellBlank label="Date" widthClass="min-w-[6rem]" />
+            </header>
+            <div>{children}</div>
+          </div>
+        </div>
+
+        {overflowing && pageHeight > 0 ? (
+          <div
+            data-overflow-wash="true"
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-red-500/25"
+            style={{ top: pageHeight }}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -75,21 +118,55 @@ export function LetterShell({
   className?: string;
   onOverflowChange?: (overflowing: boolean) => void;
 }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [stageHeight, setStageHeight] = useState(0);
+
   const { overflowing, pageHeight } = usePageOverflow(pageRef, contentRef);
 
   useLayoutEffect(() => {
     onOverflowChange?.(overflowing);
   }, [overflowing, onOverflowChange]);
 
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const shell = shellRef.current;
+    if (!viewport || !shell) return;
+
+    const measure = () => {
+      const letterWidthPx = shell.offsetWidth;
+      const nextScale = fitLetterScale(viewport.clientWidth, letterWidthPx);
+      setScale(nextScale);
+      setStageHeight(shell.offsetHeight);
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    observer.observe(shell);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   return (
     <LetterShellView
       className={className}
       overflowing={overflowing}
       pageHeight={pageHeight}
+      scale={scale}
+      stageHeight={stageHeight}
       pageRef={pageRef}
       contentRef={contentRef}
+      shellRef={shellRef}
+      viewportRef={viewportRef}
     >
       {children}
     </LetterShellView>

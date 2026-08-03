@@ -24,10 +24,11 @@ describe("LetterShellView", () => {
     const html = renderToStaticMarkup(
       createElement(
         LetterShellView,
-        { overflowing: true, pageHeight: 400 },
+        { overflowing: true, pageHeight: 400, scale: 1, stageHeight: 400 },
         "x",
       ),
     );
     expect(html).toContain('data-overflow-wash="true"');
+    expect(html).toContain("letter-shell-viewport");
   });
 });
