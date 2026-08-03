@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   SIDEBAR_OFFSET_CLASS,
   SIDEBAR_WIDTH_CLASS,
-  TOP_BAR_HEIGHT_CLASS,
   WORKSPACE_LABEL,
 } from "./workspace";
 
@@ -14,6 +13,5 @@ describe("workspace chrome constants", () => {
   it("uses 256px sidebar width utilities", () => {
     expect(SIDEBAR_WIDTH_CLASS).toBe("w-64");
     expect(SIDEBAR_OFFSET_CLASS).toBe("pl-64");
-    expect(TOP_BAR_HEIGHT_CLASS).toBe("h-16");
   });
 });

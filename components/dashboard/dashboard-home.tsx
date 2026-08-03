@@ -3,7 +3,7 @@ import { NewWorkbookButton } from "@/components/new-workbook-button";
 
 export function DashboardHome() {
   return (
-    <div className="flex min-h-[calc(100dvh-8rem)] flex-col justify-center">
+    <div className="flex min-h-dvh flex-col justify-center">
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-12 lg:flex-row lg:items-center lg:gap-16">
         <div className="order-2 w-full space-y-10 lg:order-1 lg:w-1/2">
           <div className="space-y-4">

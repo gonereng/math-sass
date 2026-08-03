@@ -250,10 +250,10 @@ export function ProjectsEditor({
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4">
+    <div className="flex h-[calc(100dvh-2rem)] flex-col gap-4 overflow-hidden">
       <div
         data-print-hide
-        className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
+        className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Link
@@ -310,10 +310,10 @@ export function ProjectsEditor({
         </Button>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
         <aside
           data-print-hide
-          className="flex w-64 shrink-0 flex-col gap-3 border-r border-border pr-4"
+          className="flex w-64 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border pr-4"
         >
           <h2 className="text-sm font-medium">Sections</h2>
           <ul className="flex flex-col gap-2">
@@ -411,38 +411,41 @@ export function ProjectsEditor({
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 overflow-auto px-2">
-          <div className="flex flex-col gap-4">
-            <div data-print-hide className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                disabled={busy || sections.length === 0}
-                onClick={handleGenerate}
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div
+            data-print-hide
+            className="flex shrink-0 flex-wrap items-center gap-3 pb-4"
+          >
+            <Button
+              type="button"
+              disabled={busy || sections.length === 0}
+              onClick={handleGenerate}
+            >
+              Generate
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy || !exportGate.ok}
+              onClick={() => window.print()}
+            >
+              Export PDF
+            </Button>
+            {stale ? (
+              <p
+                role="status"
+                className="text-sm font-medium text-amber-700"
               >
-                Generate
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy || !exportGate.ok}
-                onClick={() => window.print()}
-              >
-                Export PDF
-              </Button>
-              {stale ? (
-                <p
-                  role="status"
-                  className="text-sm font-medium text-amber-700"
-                >
-                  Preview may be stale — generate again
-                </p>
-              ) : null}
-              {!exportGate.ok && !stale ? (
-                <p className="text-sm text-muted-foreground">
-                  {exportGate.reason}
-                </p>
-              ) : null}
-            </div>
+                Preview may be stale — generate again
+              </p>
+            ) : null}
+            {!exportGate.ok && !stale ? (
+              <p className="text-sm text-muted-foreground">
+                {exportGate.reason}
+              </p>
+            ) : null}
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto px-2">
             {pages.length === 0 ? (
               <div
                 data-print-hide

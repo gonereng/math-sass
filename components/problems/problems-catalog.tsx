@@ -21,50 +21,54 @@ export function ProblemsCatalog() {
   const { Component, demoProps } = selected;
 
   return (
-    <div className="panel-ruled flex h-[calc(100vh-8rem)] min-h-[28rem] gap-0 overflow-hidden">
-      <aside className="flex w-60 shrink-0 flex-col border-r bg-muted">
-        <div className="border-b px-4 py-3">
+    <div className="flex min-h-[calc(100dvh-2rem)] gap-4">
+      <aside className="flex w-56 shrink-0 flex-col gap-3 border-r border-border pr-4">
+        <div>
           <h1 className="text-lg font-semibold tracking-tight text-foreground">
             Problems
           </h1>
-          <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+          <p className="mt-0.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
             Type catalog
           </p>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 p-2">
+        <ul className="flex flex-col gap-0.5">
           {problemTypes.map((entry) => {
             const active = entry.id === selected.id;
             return (
-              <button
-                key={entry.id}
-                type="button"
-                aria-current={active ? "true" : undefined}
-                onClick={() => setSelectedId(entry.id)}
-                className={cn(
-                  "rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors",
-                  active
-                    ? "border border-border bg-card font-semibold text-foreground"
-                    : "border border-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                {entry.name}
-              </button>
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  aria-current={active ? "true" : undefined}
+                  onClick={() => setSelectedId(entry.id)}
+                  className={cn(
+                    "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                    active
+                      ? "border border-border bg-card font-medium text-foreground shadow-[inset_3px_0_0_0_var(--primary)]"
+                      : "border border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                  )}
+                >
+                  {entry.name}
+                </button>
+              </li>
             );
           })}
-        </nav>
+        </ul>
       </aside>
-      <section className="flex min-w-0 flex-1 flex-col gap-6 overflow-auto bg-card p-6">
-        <div className="border-b border-border pb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            {selected.name}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {selected.description}
-          </p>
+
+      <section className="min-w-0 flex-1 overflow-auto px-2 [scrollbar-gutter:stable]">
+        <div className="space-y-4">
+          <div>
+            <h2 className="px-2 text-base font-semibold tracking-tight text-foreground">
+              {selected.name}
+            </h2>
+            <p className="px-2 text-xs text-muted-foreground">
+              {selected.description}
+            </p>
+          </div>
+          <LetterPreviewFrame>
+            <Component {...demoProps} />
+          </LetterPreviewFrame>
         </div>
-        <LetterPreviewFrame>
-          <Component {...demoProps} />
-        </LetterPreviewFrame>
       </section>
     </div>
   );

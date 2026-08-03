@@ -21,4 +21,10 @@ describe("problemTypes registry", () => {
     expect(addition?.description).toBe("A + B with a blank for the sum");
     expect(addition?.demoProps).toEqual({ a: 3, b: 5 });
   });
+
+  it("registers 21 grade-1 problem types with unique ids", () => {
+    expect(problemTypes).toHaveLength(21);
+    const ids = problemTypes.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

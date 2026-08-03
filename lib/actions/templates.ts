@@ -9,7 +9,7 @@ import { problemTypes } from "@/components/problems/registry";
 import type { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { randomIntInRange } from "@/lib/random";
+import { propsFromRange } from "@/lib/projects/generate-props";
 import {
   createTemplateSchema,
   deleteTemplateSchema,
@@ -270,13 +270,11 @@ export async function addTemplateItem(input: {
     }
 
     const { min, max } = parsed.data;
-    let props: Prisma.InputJsonValue = {};
-    if (input.problemTypeId === "addition-blank") {
-      props = {
-        a: randomIntInRange(min, max),
-        b: randomIntInRange(min, max),
-      };
-    }
+    const props = propsFromRange(
+      input.problemTypeId,
+      min,
+      max,
+    ) as Prisma.InputJsonValue
 
     const maxExisting = await prisma.templateItem.findFirst({
       where: { templateId: input.templateId, boxId: input.boxId },
