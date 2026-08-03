@@ -355,7 +355,7 @@ export function TemplatesEditor({
 
         <section
           ref={canvasScrollRef}
-          className="min-w-0 flex-1 overflow-auto px-2"
+          className="min-w-0 flex-1 overflow-auto px-2 [scrollbar-gutter:stable]"
         >
           {selected ? (
             <div className="space-y-4">

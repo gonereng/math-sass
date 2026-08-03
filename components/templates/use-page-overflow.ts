@@ -16,8 +16,11 @@ export function usePageOverflow(
     if (!pageEl || !contentEl) return;
 
     const measure = () => {
-      setPageHeight(Math.floor(pageEl.getBoundingClientRect().height));
-      setContentHeight(contentEl.scrollHeight);
+      const nextPageHeight = Math.floor(pageEl.getBoundingClientRect().height);
+      // contentRef is the natural-height box (no minHeight) — see LetterShellView
+      const nextContentHeight = contentEl.getBoundingClientRect().height;
+      setPageHeight(nextPageHeight);
+      setContentHeight(nextContentHeight);
     };
 
     measure();

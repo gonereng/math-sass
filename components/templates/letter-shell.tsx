@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode, type Ref } from "react";
+import { useLayoutEffect, useRef, type ReactNode, type Ref } from "react";
 import { usePageOverflow } from "@/components/templates/use-page-overflow";
 import { cn } from "@/lib/utils";
 
 /**
  * Editor letter page: fixed 8.5×11 silhouette (scaled to column width).
  * Print/PDF later should use real 8.5in×11in — do not treat this scaled box as print truth.
+ *
+ * Stage (minHeight) is separate from measured content so ResizeObserver does not
+ * compare scrollHeight inflated by minHeight against a shrunk page box (false overflow).
  */
 export function LetterShellView({
   children,
@@ -19,13 +22,15 @@ export function LetterShellView({
   children: ReactNode;
   className?: string;
   overflowing?: boolean;
-  /** Measured silhouette height in px; used for content minHeight and wash top. */
+  /** Measured silhouette height in px; used for stage floor and wash top. */
   pageHeight?: number;
   contentRef?: Ref<HTMLDivElement>;
   pageRef?: Ref<HTMLDivElement>;
 }) {
   return (
-    <div className={cn("letter-shell relative mx-auto w-full max-w-[52rem]", className)}>
+    <div
+      className={cn("letter-shell relative mx-auto w-full max-w-[52rem]", className)}
+    >
       <div
         ref={pageRef}
         aria-hidden
@@ -33,16 +38,20 @@ export function LetterShellView({
       />
 
       <div
-        ref={contentRef}
-        className="letter-shell__content relative z-10 p-8 text-black"
+        className="relative z-10"
         style={pageHeight > 0 ? { minHeight: pageHeight } : undefined}
       >
-        <header className="mb-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
-          <ShellBlank label="Name" widthClass="min-w-[10rem]" />
-          <ShellBlank label="Class" widthClass="min-w-[6rem]" />
-          <ShellBlank label="Date" widthClass="min-w-[6rem]" />
-        </header>
-        <div>{children}</div>
+        <div
+          ref={contentRef}
+          className="letter-shell__content p-8 text-black"
+        >
+          <header className="mb-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <ShellBlank label="Name" widthClass="min-w-[10rem]" />
+            <ShellBlank label="Class" widthClass="min-w-[6rem]" />
+            <ShellBlank label="Date" widthClass="min-w-[6rem]" />
+          </header>
+          <div>{children}</div>
+        </div>
       </div>
 
       {overflowing && pageHeight > 0 ? (
@@ -70,7 +79,7 @@ export function LetterShell({
   const contentRef = useRef<HTMLDivElement>(null);
   const { overflowing, pageHeight } = usePageOverflow(pageRef, contentRef);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onOverflowChange?.(overflowing);
   }, [overflowing, onOverflowChange]);
 
