@@ -87,7 +87,7 @@ export function LetterShellView({
             className="letter-shell__content text-black"
             style={{ padding: "0.5in" }}
           >
-            <header className="mb-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <header className="mb-6 flex w-full flex-wrap items-baseline justify-between gap-y-3 text-sm">
               <ShellBlank label="Name" widthClass="min-w-[10rem]" />
               <ShellBlank label="Class" widthClass="min-w-[6rem]" />
               <ShellBlank label="Date" widthClass="min-w-[6rem]" />
