@@ -1,6 +1,7 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
@@ -158,6 +159,7 @@ export async function createProject(
       },
       include: { sections: true, pages: true },
     });
+    revalidatePath("/projects");
     return { ok: true, project: mapProject(project) };
   } catch {
     return { ok: false, error: UNEXPECTED };
@@ -176,6 +178,7 @@ export async function deleteProject(
       where: { id: parsed.data.projectId, userId },
     });
     if (result.count === 0) return { ok: false, error: UNEXPECTED };
+    revalidatePath("/projects");
     return { ok: true };
   } catch {
     return { ok: false, error: UNEXPECTED };
@@ -197,6 +200,8 @@ export async function updateProjectName(
     if (result.count === 0) return { ok: false, error: UNEXPECTED };
     const project = await loadProjectForUser(parsed.data.projectId, userId);
     if (!project) return { ok: false, error: UNEXPECTED };
+    revalidatePath("/projects");
+    revalidatePath(`/projects/${parsed.data.projectId}`);
     return { ok: true, project };
   } catch {
     return { ok: false, error: UNEXPECTED };

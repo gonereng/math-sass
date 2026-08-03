@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,10 @@ export function ProjectsTable({
   const [projects, setProjects] = useState(initialProjects);
   const [pending, setPending] = useState(false);
 
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
+
   async function handleNewProject() {
     setPending(true);
     try {
@@ -30,8 +34,7 @@ export function ProjectsTable({
         return;
       }
       setProjects((prev) => [result.project, ...prev]);
-      router.push(`/projects/${result.project.id}`);
-      router.refresh();
+      router.replace(`/projects/${result.project.id}`);
     } finally {
       setPending(false);
     }

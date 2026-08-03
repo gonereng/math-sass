@@ -116,8 +116,8 @@ export function ProjectsEditor({
         toast.error(result.error);
         return;
       }
-      router.push("/projects");
-      router.refresh();
+      // replace only — push+refresh remounts the shell and loops /api/auth/session
+      router.replace("/projects");
     } finally {
       setBusy(false);
     }
@@ -148,7 +148,6 @@ export function ProjectsEditor({
       }
       setProject(result.project);
       setTitleDraft(result.project.name);
-      router.refresh();
     } finally {
       setBusy(false);
     }

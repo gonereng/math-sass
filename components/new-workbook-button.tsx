@@ -28,8 +28,7 @@ export function NewWorkbookButton({
         toast.error(result.error);
         return;
       }
-      router.push(`/projects/${result.project.id}`);
-      router.refresh();
+      router.replace(`/projects/${result.project.id}`);
     } finally {
       setPending(false);
     }
