@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -56,6 +56,7 @@ export function TemplatesEditor({
   const [pageOverflowing, setPageOverflowing] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const canvasScrollRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setPageOverflowing(false);
@@ -161,6 +162,8 @@ export function TemplatesEditor({
 
   async function handleRemoveItem(id: string) {
     if (!selected) return;
+    const scroller = canvasScrollRef.current;
+    const scrollTop = scroller?.scrollTop ?? 0;
     const previous = templates;
     setTemplates((prev) =>
       prev.map((t) =>
@@ -174,6 +177,9 @@ export function TemplatesEditor({
       setTemplates(previous);
       toast.error(result.error);
     }
+    requestAnimationFrame(() => {
+      if (scroller) scroller.scrollTop = scrollTop;
+    });
   }
 
   async function handleConfirmMinMax({
@@ -347,7 +353,10 @@ export function TemplatesEditor({
           </ul>
         </aside>
 
-        <section className="min-w-0 flex-1 overflow-auto px-2">
+        <section
+          ref={canvasScrollRef}
+          className="min-w-0 flex-1 overflow-auto px-2"
+        >
           {selected ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -430,14 +439,16 @@ export function TemplatesEditor({
                   </Button>
                 </div>
               </div>
-              {pageOverflowing ? (
-                <div
-                  role="status"
-                  className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
-                >
-                  Content exceeds one page
-                </div>
-              ) : null}
+              <div className="min-h-[2.75rem]">
+                {pageOverflowing ? (
+                  <div
+                    role="status"
+                    className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+                  >
+                    Content exceeds one page
+                  </div>
+                ) : null}
+              </div>
               <LetterShell onOverflowChange={setPageOverflowing}>
                 <TemplateCanvas
                   template={selected}

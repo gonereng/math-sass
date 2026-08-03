@@ -151,6 +151,8 @@ function SortableTemplateItem({
         size="icon-xs"
         className="text-black/60 hover:text-black"
         aria-label="Remove item"
+        // Avoid focus-loss scroll jump when this control unmounts on delete
+        onMouseDown={(e) => e.preventDefault()}
         onClick={onRemove}
       >
         <X />
