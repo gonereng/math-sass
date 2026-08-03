@@ -21,12 +21,15 @@ import { ProblemPalette } from "@/components/templates/problem-palette";
 import { TemplateCanvas } from "@/components/templates/template-canvas";
 import { problemTypes } from "@/components/problems/registry";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   addTemplateItem,
   createTemplate,
+  deleteTemplate,
   reorderTemplateItems,
   removeTemplateItem,
   updateTemplateLayout,
+  updateTemplateName,
   type TemplateWithItems,
 } from "@/lib/actions/templates";
 import { cn } from "@/lib/utils";
@@ -51,9 +54,12 @@ export function TemplatesEditor({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pageOverflowing, setPageOverflowing] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
 
   useEffect(() => {
     setPageOverflowing(false);
+    setEditingTitle(false);
   }, [selectedId]);
 
   useEffect(() => {
@@ -67,6 +73,12 @@ export function TemplatesEditor({
   }, [initialTemplates]);
 
   const selected = templates.find((t) => t.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (selected && !editingTitle) {
+      setTitleDraft(selected.name);
+    }
+  }, [selected, editingTitle]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -88,6 +100,60 @@ export function TemplatesEditor({
       }
       setTemplates((prev) => [...prev, result.template]);
       setSelectedId(result.template.id);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function commitTitle() {
+    if (!selected) {
+      setEditingTitle(false);
+      return;
+    }
+    const next = titleDraft.trim();
+    setEditingTitle(false);
+    if (!next) {
+      setTitleDraft(selected.name);
+      toast.error("Name is required");
+      return;
+    }
+    if (next === selected.name) {
+      setTitleDraft(selected.name);
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await updateTemplateName({
+        templateId: selected.id,
+        name: next,
+      });
+      if (!result.ok) {
+        setTitleDraft(selected.name);
+        toast.error(result.error);
+        return;
+      }
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === selected.id ? result.template : t)),
+      );
+      setTitleDraft(result.template.name);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteTemplate() {
+    if (!selected) return;
+    const deletedId = selected.id;
+    setBusy(true);
+    try {
+      const result = await deleteTemplate({ templateId: deletedId });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      const nextTemplates = templates.filter((t) => t.id !== deletedId);
+      setTemplates(nextTemplates);
+      setSelectedId(nextTemplates[0]?.id ?? null);
     } finally {
       setBusy(false);
     }
@@ -285,40 +351,83 @@ export function TemplatesEditor({
           {selected ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight">
-                    {selected.name}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
+                <div className="min-w-0 flex-1">
+                  {editingTitle ? (
+                    <Input
+                      autoFocus
+                      value={titleDraft}
+                      disabled={busy}
+                      onChange={(e) => setTitleDraft(e.target.value)}
+                      onFocus={(e) => e.currentTarget.select()}
+                      onBlur={() => {
+                        void commitTitle();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.blur();
+                        }
+                        if (e.key === "Escape") {
+                          setTitleDraft(selected.name);
+                          setEditingTitle(false);
+                        }
+                      }}
+                      className="h-auto max-w-xl rounded-lg border-border px-2 py-1 text-base font-semibold tracking-tight"
+                      aria-label="Template name"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setTitleDraft(selected.name);
+                        setEditingTitle(true);
+                      }}
+                      className="min-w-0 truncate rounded-lg px-2 py-1 text-left text-base font-semibold tracking-tight text-foreground hover:bg-muted/60"
+                    >
+                      {selected.name}
+                    </button>
+                  )}
+                  <p className="px-2 text-xs text-muted-foreground">
                     Layout for this page
                   </p>
                 </div>
-                <div
-                  className="inline-flex rounded-md border bg-background p-0.5"
-                  role="group"
-                  aria-label="Page layout"
-                >
-                  {SWITCHABLE_LAYOUT_IDS.map((layoutId) => {
-                    const layout = getLayout(layoutId);
-                    const active = selected.layoutId === layoutId;
-                    return (
-                      <button
-                        key={layoutId}
-                        type="button"
-                        disabled={busy}
-                        aria-pressed={active}
-                        onClick={() => handleLayoutChange(layoutId)}
-                        className={cn(
-                          "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                          active
-                            ? "bg-muted text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {layout.name}
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div
+                    className="inline-flex rounded-md border bg-background p-0.5"
+                    role="group"
+                    aria-label="Page layout"
+                  >
+                    {SWITCHABLE_LAYOUT_IDS.map((layoutId) => {
+                      const layout = getLayout(layoutId);
+                      const active = selected.layoutId === layoutId;
+                      return (
+                        <button
+                          key={layoutId}
+                          type="button"
+                          disabled={busy}
+                          aria-pressed={active}
+                          onClick={() => handleLayoutChange(layoutId)}
+                          className={cn(
+                            "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                            active
+                              ? "bg-muted text-foreground"
+                              : "text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {layout.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={handleDeleteTemplate}
+                  >
+                    Delete
+                  </Button>
                 </div>
               </div>
               {pageOverflowing ? (

@@ -12,8 +12,10 @@ import { prisma } from "@/lib/prisma";
 import { randomIntInRange } from "@/lib/random";
 import {
   createTemplateSchema,
+  deleteTemplateSchema,
   minMaxSchema,
   updateLayoutSchema,
+  updateTemplateNameSchema,
 } from "@/lib/validations/template";
 
 export type TemplateWithItems = {
@@ -147,6 +149,69 @@ export async function createTemplate(
       },
     });
     return { ok: true, template: mapTemplate(template) };
+  } catch {
+    return { ok: false, error: UNEXPECTED };
+  }
+}
+
+export async function updateTemplateName(input: {
+  templateId: string;
+  name: string;
+}): Promise<{ ok: true; template: TemplateWithItems } | ActionError> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const parsed = updateTemplateNameSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Name is required" };
+  }
+
+  try {
+    const result = await prisma.template.updateMany({
+      where: { id: parsed.data.templateId, userId },
+      data: { name: parsed.data.name },
+    });
+    if (result.count === 0) {
+      return { ok: false, error: UNEXPECTED };
+    }
+    const template = await prisma.template.findFirst({
+      where: { id: parsed.data.templateId, userId },
+      include: {
+        items: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+    if (!template) {
+      return { ok: false, error: UNEXPECTED };
+    }
+    return { ok: true, template: mapTemplate(template) };
+  } catch {
+    return { ok: false, error: UNEXPECTED };
+  }
+}
+
+export async function deleteTemplate(input: {
+  templateId: string;
+}): Promise<{ ok: true } | ActionError> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const parsed = deleteTemplateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  try {
+    const result = await prisma.template.deleteMany({
+      where: { id: parsed.data.templateId, userId },
+    });
+    if (result.count === 0) {
+      return { ok: false, error: UNEXPECTED };
+    }
+    return { ok: true };
   } catch {
     return { ok: false, error: UNEXPECTED };
   }
