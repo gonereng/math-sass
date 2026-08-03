@@ -24,6 +24,10 @@ type TemplateCanvasProps = {
   onRemoveItem: (id: string) => void;
 };
 
+/**
+ * Same layout density as WorksheetPageView so template preview matches Generate.
+ * Drag/delete controls are hover overlays and do not add vertical chrome.
+ */
 export function TemplateCanvas({
   template,
   onRemoveItem,
@@ -69,8 +73,9 @@ function DropBox({
     <div
       ref={setNodeRef}
       className={cn(
-        "min-h-24 border border-dashed border-black/40 p-2",
-        isOver && "border-solid bg-black/5",
+        // Match WorksheetPageView box sizing; dashed border is editor-only affordance
+        "min-h-24 border border-dashed border-black/25 p-2",
+        isOver && "border-solid border-black/50 bg-black/5",
       )}
     >
       <SortableContext
@@ -123,40 +128,39 @@ function SortableTemplateItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-start gap-1 rounded border border-black/20 bg-white p-2",
+        "group relative",
         isDragging && "opacity-60",
       )}
     >
-      <button
-        type="button"
-        className="mt-0.5 cursor-grab text-black/50 active:cursor-grabbing"
-        aria-label="Reorder"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-4" />
-      </button>
-      <div className="min-w-0 flex-1">
-        {Component ? (
-          <Component {...(item.props as object)} />
-        ) : (
-          <span className="text-sm text-black/60">
-            Unknown problem: {item.problemTypeId}
-          </span>
-        )}
+      <div className="absolute top-0 right-0 left-0 z-10 flex items-start justify-between opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+        <button
+          type="button"
+          className="cursor-grab rounded bg-white/90 p-0.5 text-black/50 shadow-sm active:cursor-grabbing"
+          aria-label="Reorder"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-3.5" />
+        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className="bg-white/90 text-black/60 shadow-sm hover:text-black"
+          aria-label="Remove item"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onRemove}
+        >
+          <X className="size-3.5" />
+        </Button>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-xs"
-        className="text-black/60 hover:text-black"
-        aria-label="Remove item"
-        // Avoid focus-loss scroll jump when this control unmounts on delete
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={onRemove}
-      >
-        <X />
-      </Button>
+      {Component ? (
+        <Component {...(item.props as object)} />
+      ) : (
+        <span className="text-sm text-black/60">
+          Unknown problem: {item.problemTypeId}
+        </span>
+      )}
     </li>
   );
 }
