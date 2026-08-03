@@ -34,11 +34,15 @@ describe("layouts", () => {
   });
 
   it("maps layout ids to grid/flex classes", () => {
-    expect(getLayoutClassName("two-columns")).toBe("grid grid-cols-2 gap-4");
+    expect(getLayoutClassName("two-columns")).toBe(
+      "grid grid-cols-2 items-start gap-4",
+    );
     expect(getLayoutClassName("grid-2x2")).toBe(
-      "grid grid-cols-2 grid-rows-2 gap-4",
+      "grid grid-cols-2 items-start gap-4",
     );
     expect(getLayoutClassName("single-column")).toBe("flex flex-col gap-4");
-    expect(getLayoutClassName("unknown")).toBe("grid grid-cols-2 gap-4");
+    expect(getLayoutClassName("unknown")).toBe(
+      "grid grid-cols-2 items-start gap-4",
+    );
   });
 });

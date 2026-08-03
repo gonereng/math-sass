@@ -50,9 +50,12 @@ export function isSwitchableLayoutId(id: string): id is SwitchableLayoutId {
 export function getLayoutClassName(layoutId: string): string {
   switch (getLayout(layoutId).id) {
     case "two-columns":
-      return "grid grid-cols-2 gap-4";
+      // items-start: column height follows content (no stretch-to-match sibling)
+      return "grid grid-cols-2 items-start gap-4";
     case "grid-2x2":
-      return "grid grid-cols-2 grid-rows-2 gap-4";
+      // Auto rows (not 1fr 1fr): each row sizes to its own content so an empty
+      // bottom row does not inherit the top row's height and false-trip overflow.
+      return "grid grid-cols-2 items-start gap-4";
     case "single-column":
     default:
       return "flex flex-col gap-4";
