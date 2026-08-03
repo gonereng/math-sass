@@ -11,9 +11,9 @@ describe("workspace chrome constants", () => {
     expect(WORKSPACE_LABEL).toBe("Academic Workspace");
   });
 
-  it("uses 320px sidebar width utilities", () => {
-    expect(SIDEBAR_WIDTH_CLASS).toBe("w-80");
-    expect(SIDEBAR_OFFSET_CLASS).toBe("pl-80");
+  it("uses 256px sidebar width utilities", () => {
+    expect(SIDEBAR_WIDTH_CLASS).toBe("w-64");
+    expect(SIDEBAR_OFFSET_CLASS).toBe("pl-64");
     expect(TOP_BAR_HEIGHT_CLASS).toBe("h-16");
   });
 });
