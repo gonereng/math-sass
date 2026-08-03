@@ -22,6 +22,7 @@ import {
   removeSectionSchema,
   pageCountSchema,
   reorderSectionsSchema,
+  updateProjectNameSchema,
   updateSectionPageCountSchema,
 } from "@/lib/validations/project";
 
@@ -176,6 +177,27 @@ export async function deleteProject(
     });
     if (result.count === 0) return { ok: false, error: UNEXPECTED };
     return { ok: true };
+  } catch {
+    return { ok: false, error: UNEXPECTED };
+  }
+}
+
+export async function updateProjectName(
+  input: { projectId: string; name: string },
+): Promise<{ ok: true; project: ProjectWithDetails } | { ok: false; error: string }> {
+  const userId = await requireUserId();
+  if (!userId) return { ok: false, error: UNEXPECTED };
+  const parsed = updateProjectNameSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Name is required" };
+  try {
+    const result = await prisma.project.updateMany({
+      where: { id: parsed.data.projectId, userId },
+      data: { name: parsed.data.name },
+    });
+    if (result.count === 0) return { ok: false, error: UNEXPECTED };
+    const project = await loadProjectForUser(parsed.data.projectId, userId);
+    if (!project) return { ok: false, error: UNEXPECTED };
+    return { ok: true, project };
   } catch {
     return { ok: false, error: UNEXPECTED };
   }

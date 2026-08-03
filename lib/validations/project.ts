@@ -33,3 +33,8 @@ export const generateProjectSchema = z.object({
 export const deleteProjectSchema = z.object({
   projectId: z.string().min(1),
 });
+
+export const updateProjectNameSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().trim().min(1).max(100),
+});

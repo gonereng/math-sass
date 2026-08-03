@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { LetterShell } from "@/components/templates/letter-shell";
 import { WorksheetPageView } from "@/components/worksheets/worksheet-page-view";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
   generateProject,
   removeProjectSection,
   reorderProjectSections,
+  updateProjectName,
   updateSectionPageCount,
   type ProjectWithDetails,
 } from "@/lib/actions/projects";
@@ -38,9 +40,12 @@ export function ProjectsEditor({
     () => templates?.[0]?.id ?? "",
   );
   const [busy, setBusy] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(initialProject.name);
 
   useEffect(() => {
     setProject(initialProject);
+    setTitleDraft(initialProject.name);
   }, [initialProject]);
 
   useEffect(() => {
@@ -112,6 +117,37 @@ export function ProjectsEditor({
         return;
       }
       router.push("/projects");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function commitTitle() {
+    const next = titleDraft.trim();
+    setEditingTitle(false);
+    if (!next) {
+      setTitleDraft(project.name);
+      toast.error("Name is required");
+      return;
+    }
+    if (next === project.name) {
+      setTitleDraft(project.name);
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await updateProjectName({
+        projectId: project.id,
+        name: next,
+      });
+      if (!result.ok) {
+        setTitleDraft(project.name);
+        toast.error(result.error);
+        return;
+      }
+      setProject(result.project);
+      setTitleDraft(result.project.name);
       router.refresh();
     } finally {
       setBusy(false);
@@ -220,16 +256,49 @@ export function ProjectsEditor({
         data-print-hide
         className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
       >
-        <div className="space-y-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <Link
             href="/projects"
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            aria-label="Back to projects"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            ← All projects
+            <ArrowLeft className="size-5" aria-hidden />
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {project.name}
-          </h1>
+          {editingTitle ? (
+            <Input
+              autoFocus
+              value={titleDraft}
+              disabled={busy}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={() => {
+                void commitTitle();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                }
+                if (e.key === "Escape") {
+                  setTitleDraft(project.name);
+                  setEditingTitle(false);
+                }
+              }}
+              className="h-auto max-w-xl flex-1 rounded-lg border-border px-2 py-1 text-2xl font-semibold tracking-tight"
+              aria-label="Project name"
+            />
+          ) : (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setTitleDraft(project.name);
+                setEditingTitle(true);
+              }}
+              className="min-w-0 truncate rounded-lg px-2 py-1 text-left text-2xl font-semibold tracking-tight text-foreground hover:bg-muted/60"
+            >
+              {project.name}
+            </button>
+          )}
         </div>
         <Button
           type="button"
