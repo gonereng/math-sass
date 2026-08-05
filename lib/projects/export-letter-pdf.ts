@@ -54,23 +54,35 @@ function prepareShellForCapture(shell: HTMLElement): () => void {
   };
 }
 
-/**
- * Renders each `.print-page .letter-shell` in `root` into a US Letter PDF
- * (8.5in × 11in) and triggers browser downloads for the PDF plus a PNG of
- * the first page (cover).
- */
-export async function exportLetterPagesToPdf(input: {
-  root: HTMLElement;
-  fileName: string;
-}): Promise<void> {
-  const shells = [
-    ...input.root.querySelectorAll<HTMLElement>(".print-page .letter-shell"),
-  ];
+async function captureShellPng(shell: HTMLElement): Promise<string> {
+  const restore = prepareShellForCapture(shell);
+  try {
+    await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+    return await toPng(shell, {
+      cacheBust: true,
+      pixelRatio: 2,
+      width: Math.round(LETTER_WIDTH_IN * 96),
+      height: Math.round(LETTER_HEIGHT_IN * 96),
+      style: {
+        transform: "none",
+        width: `${LETTER_WIDTH_IN}in`,
+        height: `${LETTER_HEIGHT_IN}in`,
+      },
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return true;
+        return !node.hasAttribute("data-overflow-wash");
+      },
+    });
+  } finally {
+    restore();
+  }
+}
+
+async function buildPdfFromShells(shells: HTMLElement[]): Promise<jsPDF> {
   if (shells.length === 0) {
     throw new Error("No pages to export");
   }
 
-  const baseName = input.fileName.replace(/\.pdf$/i, "").trim() || "worksheet";
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "in",
@@ -78,60 +90,24 @@ export async function exportLetterPagesToPdf(input: {
     compress: true,
   });
 
-  let coverPngDataUrl: string | null = null;
-
   for (let i = 0; i < shells.length; i++) {
-    const shell = shells[i]!;
-    const restore = prepareShellForCapture(shell);
-    try {
-      // Let layout settle after unscaling
-      await new Promise((r) => requestAnimationFrame(() => r(undefined)));
-
-      const dataUrl = await toPng(shell, {
-        cacheBust: true,
-        pixelRatio: 2,
-        width: Math.round(LETTER_WIDTH_IN * 96),
-        height: Math.round(LETTER_HEIGHT_IN * 96),
-        style: {
-          transform: "none",
-          width: `${LETTER_WIDTH_IN}in`,
-          height: `${LETTER_HEIGHT_IN}in`,
-        },
-        filter: (node) => {
-          if (!(node instanceof HTMLElement)) return true;
-          return !node.hasAttribute("data-overflow-wash");
-        },
-      });
-
-      if (i === 0) {
-        coverPngDataUrl = dataUrl;
-      }
-
-      if (i > 0) {
-        pdf.addPage([LETTER_WIDTH_IN, LETTER_HEIGHT_IN], "portrait");
-      }
-      pdf.addImage(
-        dataUrl,
-        "PNG",
-        0,
-        0,
-        LETTER_WIDTH_IN,
-        LETTER_HEIGHT_IN,
-        undefined,
-        "FAST",
-      );
-    } finally {
-      restore();
+    const dataUrl = await captureShellPng(shells[i]!);
+    if (i > 0) {
+      pdf.addPage([LETTER_WIDTH_IN, LETTER_HEIGHT_IN], "portrait");
     }
+    pdf.addImage(
+      dataUrl,
+      "PNG",
+      0,
+      0,
+      LETTER_WIDTH_IN,
+      LETTER_HEIGHT_IN,
+      undefined,
+      "FAST",
+    );
   }
 
-  pdf.save(`${baseName}.pdf`);
-
-  if (coverPngDataUrl) {
-    // Brief gap so the browser accepts a second automatic download.
-    await new Promise((r) => setTimeout(r, 150));
-    downloadDataUrl(coverPngDataUrl, `${baseName}-cover.png`);
-  }
+  return pdf;
 }
 
 function downloadDataUrl(dataUrl: string, fileName: string): void {
@@ -142,4 +118,114 @@ function downloadDataUrl(dataUrl: string, fileName: string): void {
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function baseFileName(fileName: string): string {
+  return fileName.replace(/\.pdf$/i, "").trim() || "worksheet";
+}
+
+/** Worksheet shells in DOM order (excludes answer-key pages). */
+export function getWorksheetShells(root: HTMLElement): HTMLElement[] {
+  return [
+    ...root.querySelectorAll<HTMLElement>(
+      '.print-page[data-print-kind="worksheet"] .letter-shell',
+    ),
+  ];
+}
+
+/**
+ * First worksheet page of each section, in section order.
+ * Falls back to all worksheets if section markers are missing.
+ */
+export function getFirstPagePerSectionShells(root: HTMLElement): HTMLElement[] {
+  const pages = [
+    ...root.querySelectorAll<HTMLElement>(
+      '.print-page[data-print-kind="worksheet"]',
+    ),
+  ];
+  const firstPages = pickFirstElementPerSection(pages);
+  const shells = firstPages
+    .map((page) => page.querySelector<HTMLElement>(".letter-shell"))
+    .filter((shell): shell is HTMLElement => shell != null);
+
+  if (shells.length > 0) return shells;
+  return getWorksheetShells(root);
+}
+
+/** Keeps the first element for each `data-section-id`, in encounter order. */
+export function pickFirstElementPerSection(
+  pages: HTMLElement[],
+): HTMLElement[] {
+  const seen = new Set<string>();
+  const out: HTMLElement[] = [];
+  for (const page of pages) {
+    const sectionId = page.dataset.sectionId;
+    if (!sectionId || seen.has(sectionId)) continue;
+    seen.add(sectionId);
+    out.push(page);
+  }
+  return out;
+}
+
+/** Same selection rule for plain page records (tests / non-DOM callers). */
+export function pickFirstPagePerSection<T extends { sectionId: string }>(
+  pages: T[],
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const page of pages) {
+    if (seen.has(page.sectionId)) continue;
+    seen.add(page.sectionId);
+    out.push(page);
+  }
+  return out;
+}
+
+/**
+ * Downloads:
+ * 1. Full PDF (all worksheet pages + answer keys)
+ * 2. Cover PNG of the first worksheet page
+ */
+export async function exportLetterPagesToPdf(input: {
+  root: HTMLElement;
+  fileName: string;
+}): Promise<void> {
+  const allShells = [
+    ...input.root.querySelectorAll<HTMLElement>(".print-page .letter-shell"),
+  ];
+  if (allShells.length === 0) {
+    throw new Error("No pages to export");
+  }
+
+  const name = baseFileName(input.fileName);
+  const worksheetShells = getWorksheetShells(input.root);
+  const coverShell = worksheetShells[0] ?? allShells[0]!;
+
+  const fullPdf = await buildPdfFromShells(allShells);
+  fullPdf.save(`${name}.pdf`);
+
+  await delay(150);
+  const coverPngDataUrl = await captureShellPng(coverShell);
+  downloadDataUrl(coverPngDataUrl, `${name}-cover.png`);
+}
+
+/**
+ * PDF with only the first page of each section (no answer key).
+ * Used after Generate.
+ */
+export async function exportSectionFirstPagesToPdf(input: {
+  root: HTMLElement;
+  fileName: string;
+}): Promise<void> {
+  const shells = getFirstPagePerSectionShells(input.root);
+  if (shells.length === 0) {
+    throw new Error("No pages to export");
+  }
+  const name = baseFileName(input.fileName);
+  const pdf = await buildPdfFromShells(shells);
+  pdf.save(`${name}-sections.pdf`);
 }

@@ -21,7 +21,7 @@ import {
 } from "@/lib/actions/projects";
 import { canExportPdf } from "@/lib/projects/can-export-pdf";
 import { chunkPages } from "@/lib/projects/chunk-pages";
-import { exportLetterPagesToPdf } from "@/lib/projects/export-letter-pdf";
+import { exportLetterPagesToPdf, exportSectionFirstPagesToPdf } from "@/lib/projects/export-letter-pdf";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
 import {
   DEFAULT_SHEET_HEADER_LOCALE,
@@ -55,6 +55,7 @@ export function ProjectsEditor({
   const [headerLocale, setHeaderLocale] = useState<SheetHeaderLocaleId>(
     DEFAULT_SHEET_HEADER_LOCALE,
   );
+  const [pendingSectionsPdf, setPendingSectionsPdf] = useState(false);
 
   useEffect(() => {
     setProject(initialProject);
@@ -257,10 +258,52 @@ export function ProjectsEditor({
         return;
       }
       setProject(result.project);
+      setPendingSectionsPdf(true);
     } finally {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!pendingSectionsPdf) return;
+    if (pages.length === 0) {
+      setPendingSectionsPdf(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      // Wait for LetterShell to mount and finish first layout pass.
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      await new Promise((r) => setTimeout(r, 200));
+      if (cancelled) return;
+
+      const root = document.querySelector<HTMLElement>("[data-print-root]");
+      if (!root) {
+        setPendingSectionsPdf(false);
+        return;
+      }
+
+      try {
+        await exportSectionFirstPagesToPdf({
+          root,
+          fileName: project.name.trim() || "worksheet",
+        });
+      } catch (err) {
+        console.error(err);
+        toast.error("Could not create sections PDF");
+      } finally {
+        if (!cancelled) setPendingSectionsPdf(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingSectionsPdf, pages, project.name]);
 
   async function handleExportPdf() {
     const root = document.querySelector<HTMLElement>("[data-print-root]");
@@ -520,31 +563,36 @@ export function ProjectsEditor({
             ) : (
               <div className="flex flex-col gap-8 pb-8" data-print-root>
                 {pages.map((page) => (
-                  <LetterShell
+                  <div
                     key={page.id}
                     className="print-page"
-                    headerLocale={headerLocale}
+                    data-print-kind="worksheet"
+                    data-section-id={page.sectionId}
                   >
-                    <WorksheetPageView
-                      layoutId={page.layoutId}
-                      items={page.items}
-                    />
-                  </LetterShell>
+                    <LetterShell headerLocale={headerLocale}>
+                      <WorksheetPageView
+                        layoutId={page.layoutId}
+                        items={page.items}
+                      />
+                    </LetterShell>
+                  </div>
                 ))}
                 {chunkPages(pages, 2).map((group, groupIndex) => (
-                  <LetterShell
+                  <div
                     key={`answer-key-${groupIndex}`}
                     className="print-page"
-                    headerLocale={headerLocale}
+                    data-print-kind="answer-key"
                   >
-                    <AnswerKeyPage
-                      cells={group.map((page, i) => ({
-                        label: `Page ${groupIndex * 2 + i + 1}`,
-                        layoutId: page.layoutId,
-                        items: page.items,
-                      }))}
-                    />
-                  </LetterShell>
+                    <LetterShell headerLocale={headerLocale}>
+                      <AnswerKeyPage
+                        cells={group.map((page, i) => ({
+                          label: `Page ${groupIndex * 2 + i + 1}`,
+                          layoutId: page.layoutId,
+                          items: page.items,
+                        }))}
+                      />
+                    </LetterShell>
+                  </div>
                 ))}
               </div>
             )}
