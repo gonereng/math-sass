@@ -14,11 +14,16 @@ export type WorksheetViewItem = {
 export function WorksheetPageView({
   layoutId,
   items,
+  showAnswer = false,
+  fontSize,
 }: {
   layoutId: string;
   items: WorksheetViewItem[];
+  showAnswer?: boolean;
+  fontSize?: string | number;
 }) {
   const layout = getLayout(layoutId);
+  const dense = showAnswer || fontSize != null;
 
   return (
     <div className={getLayoutClassName(layout.id)}>
@@ -29,8 +34,11 @@ export function WorksheetPageView({
           .sort((a, b) => a.sortOrder - b.sortOrder);
 
         return (
-          <div key={box.id} className="min-h-24 p-2">
-            <ul className="flex flex-col gap-2">
+          <div
+            key={box.id}
+            className={dense ? "min-h-0 p-1" : "min-h-24 p-2"}
+          >
+            <ul className={dense ? "flex flex-col gap-1" : "flex flex-col gap-2"}>
               {boxItems.map((item, index) => {
                 const problemType = problemTypes.find(
                   (p) => p.id === item.problemTypeId,
@@ -39,7 +47,11 @@ export function WorksheetPageView({
                 if (!Component) return null;
                 return (
                   <li key={`${item.boxId}-${item.sortOrder}-${index}`}>
-                    <Component {...(item.props as object)} />
+                    <Component
+                      {...(item.props as object)}
+                      showAnswer={showAnswer}
+                      {...(fontSize != null ? { fontSize } : {})}
+                    />
                   </li>
                 );
               })}
