@@ -1,3 +1,10 @@
+import { AnswerBlank } from "@/components/problems/shared/answer-blank";
+import {
+  DigitCell,
+  EqCell,
+  EquationGrid,
+  OpCell,
+} from "@/components/problems/shared/equation-layout";
 import { cn } from "@/lib/utils";
 import type { AdditionBlankProps } from "@/components/problems/types";
 
@@ -7,23 +14,17 @@ export function AdditionBlank({
   fontSize = "1.25rem",
   className,
 }: AdditionBlankProps) {
-  const size = typeof fontSize === "number" ? `${fontSize}px` : fontSize;
-
   return (
-    <div
-      className={cn(
-        "inline-flex items-baseline gap-2 font-medium text-black",
-        className,
-      )}
-      style={{ fontSize: size }}
+    <EquationGrid
+      variant="binary-eq"
+      fontSize={fontSize}
+      className={className}
     >
-      <span>
-        {a} + {b} =
-      </span>
-      <span
-        aria-hidden="true"
-        className="inline-block min-w-[4rem] border-b-2 border-black align-baseline"
-      />
-    </div>
+      <DigitCell>{a}</DigitCell>
+      <OpCell>+</OpCell>
+      <DigitCell>{b}</DigitCell>
+      <EqCell />
+      <AnswerBlank className={cn("w-full")} minWidthClass="min-w-0" />
+    </EquationGrid>
   );
 }

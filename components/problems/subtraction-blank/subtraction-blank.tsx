@@ -1,4 +1,10 @@
-import { AnswerBlank, ProblemRow } from "@/components/problems/shared/answer-blank";
+import { AnswerBlank } from "@/components/problems/shared/answer-blank";
+import {
+  DigitCell,
+  EqCell,
+  EquationGrid,
+  OpCell,
+} from "@/components/problems/shared/equation-layout";
 import { cn } from "@/lib/utils";
 
 export function SubtractionBlank({
@@ -8,9 +14,16 @@ export function SubtractionBlank({
   className,
 }: { a: number; b: number; fontSize?: string | number; className?: string }) {
   return (
-    <ProblemRow fontSize={fontSize} className={cn("flex-row items-baseline gap-2", className)}>
-      <span>{a} − {b} =</span>
-      <AnswerBlank />
-    </ProblemRow>
+    <EquationGrid
+      variant="binary-eq"
+      fontSize={fontSize}
+      className={className}
+    >
+      <DigitCell>{a}</DigitCell>
+      <OpCell>−</OpCell>
+      <DigitCell>{b}</DigitCell>
+      <EqCell />
+      <AnswerBlank className={cn("w-full")} minWidthClass="min-w-0" />
+    </EquationGrid>
   );
 }
