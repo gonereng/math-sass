@@ -56,7 +56,8 @@ function prepareShellForCapture(shell: HTMLElement): () => void {
 
 /**
  * Renders each `.print-page .letter-shell` in `root` into a US Letter PDF
- * (8.5in × 11in) and triggers a browser download.
+ * (8.5in × 11in) and triggers browser downloads for the PDF plus a PNG of
+ * the first page (cover).
  */
 export async function exportLetterPagesToPdf(input: {
   root: HTMLElement;
@@ -69,12 +70,15 @@ export async function exportLetterPagesToPdf(input: {
     throw new Error("No pages to export");
   }
 
+  const baseName = input.fileName.replace(/\.pdf$/i, "").trim() || "worksheet";
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "in",
     format: [LETTER_WIDTH_IN, LETTER_HEIGHT_IN],
     compress: true,
   });
+
+  let coverPngDataUrl: string | null = null;
 
   for (let i = 0; i < shells.length; i++) {
     const shell = shells[i]!;
@@ -99,6 +103,10 @@ export async function exportLetterPagesToPdf(input: {
         },
       });
 
+      if (i === 0) {
+        coverPngDataUrl = dataUrl;
+      }
+
       if (i > 0) {
         pdf.addPage([LETTER_WIDTH_IN, LETTER_HEIGHT_IN], "portrait");
       }
@@ -117,8 +125,21 @@ export async function exportLetterPagesToPdf(input: {
     }
   }
 
-  const name = input.fileName.endsWith(".pdf")
-    ? input.fileName
-    : `${input.fileName}.pdf`;
-  pdf.save(name);
+  pdf.save(`${baseName}.pdf`);
+
+  if (coverPngDataUrl) {
+    // Brief gap so the browser accepts a second automatic download.
+    await new Promise((r) => setTimeout(r, 150));
+    downloadDataUrl(coverPngDataUrl, `${baseName}-cover.png`);
+  }
+}
+
+function downloadDataUrl(dataUrl: string, fileName: string): void {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = fileName;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
