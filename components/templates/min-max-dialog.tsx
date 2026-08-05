@@ -20,6 +20,7 @@ type MinMaxDialogProps = {
   onConfirm: (values: {
     min: number;
     max: number;
+    count: number;
   }) => boolean | Promise<boolean>;
   problemTypeName?: string;
 };
@@ -32,6 +33,7 @@ export function MinMaxDialog({
 }: MinMaxDialogProps) {
   const [min, setMin] = useState("1");
   const [max, setMax] = useState("10");
+  const [count, setCount] = useState("1");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -39,12 +41,13 @@ export function MinMaxDialog({
     if (open) {
       setMin("1");
       setMax("10");
+      setCount("1");
       setError(null);
     }
   }, [open]);
 
   async function handleConfirm() {
-    const parsed = minMaxSchema.safeParse({ min, max });
+    const parsed = minMaxSchema.safeParse({ min, max, count });
     if (!parsed.success) {
       setError(
         parsed.error.issues[0]?.message ?? "Enter valid min and max integers",
@@ -69,8 +72,8 @@ export function MinMaxDialog({
           <DialogTitle>Set number range</DialogTitle>
           <DialogDescription>
             {problemTypeName
-              ? `Choose min and max for ${problemTypeName}.`
-              : "Choose min and max values for the problem."}
+              ? `Choose min, max, and how many ${problemTypeName} problems to place.`
+              : "Choose min, max, and how many problems to place."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -91,6 +94,18 @@ export function MinMaxDialog({
               type="number"
               value={max}
               onChange={(e) => setMax(e.target.value)}
+              aria-invalid={Boolean(error)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="template-count">Count</Label>
+            <Input
+              id="template-count"
+              type="number"
+              min={1}
+              max={50}
+              value={count}
+              onChange={(e) => setCount(e.target.value)}
               aria-invalid={Boolean(error)}
             />
           </div>
