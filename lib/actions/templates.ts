@@ -223,10 +223,11 @@ export async function addTemplateItem(input: {
   problemTypeId: string;
   min: number;
   max: number;
+  count: number;
 }): Promise<
   | {
       ok: true;
-      item: {
+      items: {
         id: string;
         boxId: string;
         problemTypeId: string;
@@ -234,7 +235,7 @@ export async function addTemplateItem(input: {
         sortOrder: number;
         rangeMin: number | null;
         rangeMax: number | null;
-      };
+      }[];
     }
   | ActionError
 > {
@@ -246,6 +247,7 @@ export async function addTemplateItem(input: {
   const parsed = minMaxSchema.safeParse({
     min: input.min,
     max: input.max,
+    count: input.count,
   });
   if (!parsed.success) {
     return { ok: false, error: UNEXPECTED };
@@ -269,35 +271,39 @@ export async function addTemplateItem(input: {
       return { ok: false, error: UNEXPECTED };
     }
 
-    const { min, max } = parsed.data;
-    const props = propsFromRange(
-      input.problemTypeId,
-      min,
-      max,
-    ) as Prisma.InputJsonValue
+    const { min, max, count } = parsed.data;
 
     const maxExisting = await prisma.templateItem.findFirst({
       where: { templateId: input.templateId, boxId: input.boxId },
       orderBy: { sortOrder: "desc" },
       select: { sortOrder: true },
     });
-    const sortOrder = (maxExisting?.sortOrder ?? -1) + 1;
+    const baseOrder = (maxExisting?.sortOrder ?? -1) + 1;
 
-    const item = await prisma.templateItem.create({
-      data: {
-        templateId: input.templateId,
-        boxId: input.boxId,
-        problemTypeId: input.problemTypeId,
-        props,
-        sortOrder,
-        rangeMin: min,
-        rangeMax: max,
-      },
-    });
+    const created = await prisma.$transaction(
+      Array.from({ length: count }, (_, i) => {
+        const props = propsFromRange(
+          input.problemTypeId,
+          min,
+          max,
+        ) as Prisma.InputJsonValue;
+        return prisma.templateItem.create({
+          data: {
+            templateId: input.templateId,
+            boxId: input.boxId,
+            problemTypeId: input.problemTypeId,
+            props,
+            sortOrder: baseOrder + i,
+            rangeMin: min,
+            rangeMax: max,
+          },
+        });
+      }),
+    );
 
     return {
       ok: true,
-      item: {
+      items: created.map((item) => ({
         id: item.id,
         boxId: item.boxId,
         problemTypeId: item.problemTypeId,
@@ -305,7 +311,7 @@ export async function addTemplateItem(input: {
         sortOrder: item.sortOrder,
         rangeMin: item.rangeMin,
         rangeMax: item.rangeMax,
-      },
+      })),
     };
   } catch {
     return { ok: false, error: UNEXPECTED };
