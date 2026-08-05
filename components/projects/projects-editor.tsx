@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { AnswerKeyPage } from "@/components/projects/answer-key-page";
 import { LetterShell } from "@/components/templates/letter-shell";
 import { WorksheetPageView } from "@/components/worksheets/worksheet-page-view";
@@ -43,6 +43,7 @@ export function ProjectsEditor({
     () => templates?.[0]?.id ?? "",
   );
   const [busy, setBusy] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(initialProject.name);
 
@@ -259,6 +260,7 @@ export function ProjectsEditor({
       return;
     }
     setBusy(true);
+    setExportingPdf(true);
     try {
       await exportLetterPagesToPdf({
         root,
@@ -268,6 +270,7 @@ export function ProjectsEditor({
       console.error(err);
       toast.error("Could not create PDF");
     } finally {
+      setExportingPdf(false);
       setBusy(false);
     }
   }
@@ -450,11 +453,19 @@ export function ProjectsEditor({
               type="button"
               variant="outline"
               disabled={busy || !exportGate.ok}
+              aria-busy={exportingPdf}
               onClick={() => {
                 void handleExportPdf();
               }}
             >
-              Export PDF
+              {exportingPdf ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Generating
+                </>
+              ) : (
+                "Export PDF"
+              )}
             </Button>
             {stale ? (
               <p
