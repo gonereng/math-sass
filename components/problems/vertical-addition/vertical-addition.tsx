@@ -9,10 +9,17 @@ export function VerticalAddition({
 }: { a: number; b: number; fontSize?: string | number; className?: string }) {
   return (
     <ProblemRow fontSize={fontSize} className={cn("font-mono tabular-nums", className)}>
-      <div className="inline-flex flex-col items-end gap-0.5">
-        <span className="px-1">{a}</span>
-        <span className="border-b-2 border-black px-1">+ {b}</span>
-        <AnswerBlank className="mt-1 w-full" minWidthClass="min-w-[3rem]" />
+      <div
+        data-equation-grid="vertical"
+        className="inline-grid grid-cols-[1.5ch_3ch] items-end justify-items-end gap-x-1 gap-y-0.5"
+      >
+        <span />
+        <span>{a}</span>
+        <span className="justify-self-center">+</span>
+        <span>{b}</span>
+        <span className="col-span-2 border-b-2 border-black" />
+        <span />
+        <AnswerBlank className="w-full" minWidthClass="min-w-0" />
       </div>
     </ProblemRow>
   );
