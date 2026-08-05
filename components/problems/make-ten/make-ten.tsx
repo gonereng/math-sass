@@ -1,4 +1,10 @@
 import { AnswerBlank, ProblemRow } from "@/components/problems/shared/answer-blank";
+import {
+  DigitCell,
+  EqCell,
+  EquationGrid,
+  OpCell,
+} from "@/components/problems/shared/equation-layout";
 import { TenFrame } from "@/components/problems/visuals/ten-frame";
 
 export function MakeTen({
@@ -9,11 +15,13 @@ export function MakeTen({
   return (
     <ProblemRow fontSize={fontSize} className={className}>
       <TenFrame filled={a} />
-      <div className="flex flex-row items-baseline gap-2">
-        <span>{a} +</span>
-        <AnswerBlank minWidthClass="min-w-[2.5rem]" />
-        <span>= 10</span>
-      </div>
+      <EquationGrid variant="missing-mid" fontSize={fontSize}>
+        <DigitCell>{a}</DigitCell>
+        <OpCell>+</OpCell>
+        <AnswerBlank className="w-full" minWidthClass="min-w-0" />
+        <EqCell />
+        <DigitCell>10</DigitCell>
+      </EquationGrid>
     </ProblemRow>
   );
 }
