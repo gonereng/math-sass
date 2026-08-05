@@ -32,7 +32,7 @@ export function AnswerKeyPage({ cells }: { cells: AnswerKeyCell[] }) {
                     layoutId={cell.layoutId}
                     items={cell.items}
                     showAnswer
-                    fontSize="0.95rem"
+                    fontSize="0.7rem"
                   />
                 </>
               ) : null}

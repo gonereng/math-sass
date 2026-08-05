@@ -19,6 +19,21 @@ export const layoutPresets: LayoutPreset[] = [
     boxes: [{ id: "col-left" }, { id: "col-right" }],
   },
   {
+    id: "three-columns",
+    name: "Three columns",
+    boxes: [{ id: "col-0" }, { id: "col-1" }, { id: "col-2" }],
+  },
+  {
+    id: "four-columns",
+    name: "Four columns",
+    boxes: [
+      { id: "col-0" },
+      { id: "col-1" },
+      { id: "col-2" },
+      { id: "col-3" },
+    ],
+  },
+  {
     id: "grid-2x2",
     name: "2×2 grid",
     boxes: [
@@ -39,7 +54,12 @@ export function getLayout(layoutId: string): LayoutPreset {
 }
 
 /** Layouts exposed in the Templates editor switcher. */
-export const SWITCHABLE_LAYOUT_IDS = ["two-columns", "grid-2x2"] as const;
+export const SWITCHABLE_LAYOUT_IDS = [
+  "two-columns",
+  "three-columns",
+  "four-columns",
+  "grid-2x2",
+] as const;
 
 export type SwitchableLayoutId = (typeof SWITCHABLE_LAYOUT_IDS)[number];
 
@@ -52,6 +72,10 @@ export function getLayoutClassName(layoutId: string): string {
     case "two-columns":
       // items-start: column height follows content (no stretch-to-match sibling)
       return "grid grid-cols-2 items-start gap-4";
+    case "three-columns":
+      return "grid grid-cols-3 items-start gap-3";
+    case "four-columns":
+      return "grid grid-cols-4 items-start gap-2";
     case "grid-2x2":
       // Auto rows (not 1fr 1fr): each row sizes to its own content so an empty
       // bottom row does not inherit the top row's height and false-trip overflow.

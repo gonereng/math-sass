@@ -23,6 +23,12 @@ import { canExportPdf } from "@/lib/projects/can-export-pdf";
 import { chunkPages } from "@/lib/projects/chunk-pages";
 import { exportLetterPagesToPdf } from "@/lib/projects/export-letter-pdf";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
+import {
+  DEFAULT_SHEET_HEADER_LOCALE,
+  SHEET_HEADER_LOCALE_OPTIONS,
+  isSheetHeaderLocaleId,
+  type SheetHeaderLocaleId,
+} from "@/lib/i18n/sheet-header-locales";
 import { toast } from "sonner";
 
 type TemplateOption = { id: string; name: string };
@@ -46,6 +52,9 @@ export function ProjectsEditor({
   const [exportingPdf, setExportingPdf] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(initialProject.name);
+  const [headerLocale, setHeaderLocale] = useState<SheetHeaderLocaleId>(
+    DEFAULT_SHEET_HEADER_LOCALE,
+  );
 
   useEffect(() => {
     setProject(initialProject);
@@ -467,6 +476,25 @@ export function ProjectsEditor({
                 "Export PDF"
               )}
             </Button>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="shrink-0">Header</span>
+              <select
+                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm text-foreground"
+                value={headerLocale}
+                aria-label="Sheet header language"
+                onChange={(e) => {
+                  if (isSheetHeaderLocaleId(e.target.value)) {
+                    setHeaderLocale(e.target.value);
+                  }
+                }}
+              >
+                {SHEET_HEADER_LOCALE_OPTIONS.map((locale) => (
+                  <option key={locale.id} value={locale.id}>
+                    {locale.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             {stale ? (
               <p
                 role="status"
@@ -492,7 +520,11 @@ export function ProjectsEditor({
             ) : (
               <div className="flex flex-col gap-8 pb-8" data-print-root>
                 {pages.map((page) => (
-                  <LetterShell key={page.id} className="print-page">
+                  <LetterShell
+                    key={page.id}
+                    className="print-page"
+                    headerLocale={headerLocale}
+                  >
                     <WorksheetPageView
                       layoutId={page.layoutId}
                       items={page.items}
@@ -503,6 +535,7 @@ export function ProjectsEditor({
                   <LetterShell
                     key={`answer-key-${groupIndex}`}
                     className="print-page"
+                    headerLocale={headerLocale}
                   >
                     <AnswerKeyPage
                       cells={group.map((page, i) => ({

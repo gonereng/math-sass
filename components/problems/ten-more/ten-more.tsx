@@ -4,7 +4,7 @@ import { solveProblem } from "@/lib/projects/solve-problem";
 
 export function TenMore({
   n,
-  fontSize = "1.25rem",
+  fontSize = "1.1rem",
   className,
   showAnswer = false,
 }: {

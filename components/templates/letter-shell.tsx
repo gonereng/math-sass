@@ -14,6 +14,11 @@ import {
 } from "@/components/templates/letter-fit-scale";
 import { usePageOverflow } from "@/components/templates/use-page-overflow";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_SHEET_HEADER_LOCALE,
+  getSheetHeaderLabels,
+  type SheetHeaderLocaleId,
+} from "@/lib/i18n/sheet-header-locales";
 
 /**
  * Editor letter page: fixed 8.5×11in sheet, uniformly scaled to fit the column.
@@ -26,6 +31,7 @@ export function LetterShellView({
   pageHeight = 0,
   scale = 1,
   stageHeight = 0,
+  headerLocale = DEFAULT_SHEET_HEADER_LOCALE,
   contentRef,
   pageRef,
   shellRef,
@@ -40,6 +46,7 @@ export function LetterShellView({
   scale?: number;
   /** Unscaled stage height (at least one letter page; grows with spill). */
   stageHeight?: number;
+  headerLocale?: SheetHeaderLocaleId;
   contentRef?: Ref<HTMLDivElement>;
   pageRef?: Ref<HTMLDivElement>;
   shellRef?: Ref<HTMLDivElement>;
@@ -47,6 +54,7 @@ export function LetterShellView({
 }) {
   const scaledHeight =
     stageHeight > 0 ? stageHeight * scale : undefined;
+  const labels = getSheetHeaderLabels(headerLocale);
 
   return (
     <div
@@ -88,9 +96,9 @@ export function LetterShellView({
             style={{ padding: "0.5in" }}
           >
             <header className="mb-6 flex w-full flex-wrap items-baseline justify-between gap-y-3 text-sm">
-              <ShellBlank label="Name" widthClass="min-w-[10rem]" />
-              <ShellBlank label="Class" widthClass="min-w-[6rem]" />
-              <ShellBlank label="Date" widthClass="min-w-[6rem]" />
+              <ShellBlank label={labels.name} widthClass="min-w-[10rem]" />
+              <ShellBlank label={labels.classLabel} widthClass="min-w-[6rem]" />
+              <ShellBlank label={labels.date} widthClass="min-w-[6rem]" />
             </header>
             <div>{children}</div>
           </div>
@@ -113,10 +121,12 @@ export function LetterShell({
   children,
   className,
   onOverflowChange,
+  headerLocale = DEFAULT_SHEET_HEADER_LOCALE,
 }: {
   children: ReactNode;
   className?: string;
   onOverflowChange?: (overflowing: boolean) => void;
+  headerLocale?: SheetHeaderLocaleId;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -163,6 +173,7 @@ export function LetterShell({
       pageHeight={pageHeight}
       scale={scale}
       stageHeight={stageHeight}
+      headerLocale={headerLocale}
       pageRef={pageRef}
       contentRef={contentRef}
       shellRef={shellRef}

@@ -128,7 +128,7 @@ function SortableTemplateItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative",
+        "group relative w-full",
         isDragging && "opacity-60",
       )}
     >

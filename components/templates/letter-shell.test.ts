@@ -13,6 +13,19 @@ describe("LetterShellView", () => {
     expect(html).toContain("Date");
   });
 
+  it("renders French header labels when locale is fr", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        LetterShellView,
+        { headerLocale: "fr" },
+        createElement("div", null, "body"),
+      ),
+    );
+    expect(html).toContain("Nom");
+    expect(html).toContain("Classe");
+    expect(html).toContain("Date");
+  });
+
   it("does not render overflow wash when not overflowing", () => {
     const html = renderToStaticMarkup(
       createElement(LetterShellView, { overflowing: false }, "x"),

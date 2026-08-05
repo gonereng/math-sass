@@ -18,7 +18,12 @@ export const createTemplateSchema = z.object({
 
 export const updateLayoutSchema = z.object({
   templateId: z.string().min(1),
-  layoutId: z.enum(["two-columns", "grid-2x2"]),
+  layoutId: z.enum([
+    "two-columns",
+    "three-columns",
+    "four-columns",
+    "grid-2x2",
+  ]),
 });
 
 export const updateTemplateNameSchema = z.object({

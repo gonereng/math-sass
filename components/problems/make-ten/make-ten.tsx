@@ -10,7 +10,7 @@ import { solveProblem } from "@/lib/projects/solve-problem";
 
 export function MakeTen({
   a,
-  fontSize = "1.25rem",
+  fontSize = "1.1rem",
   className,
   showAnswer = false,
 }: {

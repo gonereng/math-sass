@@ -15,7 +15,7 @@ export function AnswerBlank({
     <span
       aria-hidden="true"
       className={cn(
-        "inline-block border-b-2 border-black align-baseline text-center",
+        "block w-full border-b-2 border-black text-center leading-tight",
         minWidthClass,
         className,
       )}
@@ -27,7 +27,7 @@ export function AnswerBlank({
 
 export function ProblemRow({
   children,
-  fontSize = "1.25rem",
+  fontSize = "1.1rem",
   className,
 }: {
   children: ReactNode;
@@ -38,7 +38,7 @@ export function ProblemRow({
   return (
     <div
       className={cn(
-        "inline-flex flex-col gap-2 font-medium text-black",
+        "flex w-full flex-col gap-2 font-medium text-black",
         className,
       )}
       style={{ fontSize: size }}

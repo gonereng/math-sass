@@ -5,15 +5,15 @@ const VARIANT_COLUMNS: Record<
   "binary-eq" | "missing-mid" | "vertical" | "compare",
   string
 > = {
-  "binary-eq": "2.5ch 1.5ch 2.5ch 1.5ch minmax(4rem, auto)",
-  "missing-mid": "2.5ch 1.5ch minmax(2.5rem, auto) 1.5ch 2.5ch",
-  vertical: "1.5ch 3ch",
-  compare: "2.5ch minmax(2rem, auto) 2.5ch",
+  "binary-eq": "auto auto auto auto minmax(3rem, 1fr)",
+  "missing-mid": "auto auto minmax(2.5rem, 1fr) auto auto",
+  vertical: "auto minmax(3ch, 1fr)",
+  compare: "auto minmax(2rem, 1fr) auto",
 };
 
 export function EquationGrid({
   variant,
-  fontSize = "1.25rem",
+  fontSize = "1.1rem",
   className,
   children,
 }: {
@@ -27,7 +27,7 @@ export function EquationGrid({
     <div
       data-equation-grid={variant}
       className={cn(
-        "inline-grid items-baseline gap-x-1.5 font-mono font-medium tabular-nums text-black",
+        "grid w-full items-end gap-x-1.5 font-mono font-medium tabular-nums text-black",
         className,
       )}
       style={{
@@ -48,7 +48,9 @@ export function DigitCell({
   className?: string;
 }) {
   return (
-    <span className={cn("text-right", className)}>{children}</span>
+    <span className={cn("justify-self-start text-right tabular-nums", className)}>
+      {children}
+    </span>
   );
 }
 

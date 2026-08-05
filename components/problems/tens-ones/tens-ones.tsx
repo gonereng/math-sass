@@ -6,7 +6,7 @@ import { solveProblem } from "@/lib/projects/solve-problem";
 export function TensOnes({
   tens,
   ones,
-  fontSize = "1.25rem",
+  fontSize = "1.1rem",
   className,
   showAnswer = false,
 }: {
@@ -24,7 +24,7 @@ export function TensOnes({
       <BaseTen tens={tens} ones={ones} />
       <div
         data-equation-grid="tens-ones"
-        className="inline-grid grid-cols-[auto_1.5ch_minmax(4rem,auto)] items-baseline gap-x-1.5 font-mono tabular-nums"
+        className="grid w-full grid-cols-[auto_1.5ch_minmax(3rem,1fr)] items-baseline gap-x-1.5 font-mono tabular-nums"
       >
         <span>
           {tens} tens {ones} ones

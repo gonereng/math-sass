@@ -5,7 +5,7 @@ import { solveProblem } from "@/lib/projects/solve-problem";
 export function VerticalAddition({
   a,
   b,
-  fontSize = "1.25rem",
+  fontSize = "1.1rem",
   className,
   showAnswer = false,
 }: {
@@ -22,7 +22,7 @@ export function VerticalAddition({
     <ProblemRow fontSize={fontSize} className={cn("font-mono tabular-nums", className)}>
       <div
         data-equation-grid="vertical"
-        className="inline-grid grid-cols-[1.5ch_3ch] items-end justify-items-end gap-x-1 gap-y-0.5"
+        className="grid w-full grid-cols-[1.5ch_minmax(3ch,1fr)] items-end justify-items-end gap-x-1 gap-y-0.5"
       >
         <span />
         <span>{a}</span>

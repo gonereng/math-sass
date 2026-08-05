@@ -46,7 +46,10 @@ export function WorksheetPageView({
                 const Component = problemType?.Component;
                 if (!Component) return null;
                 return (
-                  <li key={`${item.boxId}-${item.sortOrder}-${index}`}>
+                  <li
+                    key={`${item.boxId}-${item.sortOrder}-${index}`}
+                    className="w-full"
+                  >
                     <Component
                       {...(item.props as object)}
                       showAnswer={showAnswer}
