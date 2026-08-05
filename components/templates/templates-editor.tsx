@@ -185,9 +185,11 @@ export function TemplatesEditor({
   async function handleConfirmMinMax({
     min,
     max,
+    count,
   }: {
     min: number;
     max: number;
+    count: number;
   }): Promise<boolean> {
     if (!selected || !pendingDrop) return false;
     setBusy(true);
@@ -198,6 +200,7 @@ export function TemplatesEditor({
         problemTypeId: pendingDrop.problemTypeId,
         min,
         max,
+        count,
       });
       if (!result.ok) {
         toast.error(result.error);
@@ -206,7 +209,7 @@ export function TemplatesEditor({
       setTemplates((prev) =>
         prev.map((t) =>
           t.id === selected.id
-            ? { ...t, items: [...t.items, result.item] }
+            ? { ...t, items: [...t.items, ...result.items] }
             : t,
         ),
       );
