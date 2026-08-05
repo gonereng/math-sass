@@ -6,13 +6,24 @@ import {
   OpCell,
 } from "@/components/problems/shared/equation-layout";
 import { cn } from "@/lib/utils";
+import { solveProblem } from "@/lib/projects/solve-problem";
 
 export function SubtractionBlank({
   a,
   b,
   fontSize = "1.25rem",
   className,
-}: { a: number; b: number; fontSize?: string | number; className?: string }) {
+  showAnswer = false,
+}: {
+  a: number;
+  b: number;
+  fontSize?: string | number;
+  className?: string;
+  showAnswer?: boolean;
+}) {
+  const answer = showAnswer
+    ? solveProblem("subtraction-blank", { a, b })
+    : undefined;
   return (
     <EquationGrid
       variant="binary-eq"
@@ -23,7 +34,11 @@ export function SubtractionBlank({
       <OpCell>−</OpCell>
       <DigitCell>{b}</DigitCell>
       <EqCell />
-      <AnswerBlank className={cn("w-full")} minWidthClass="min-w-0" />
+      <AnswerBlank
+        className={cn("w-full")}
+        minWidthClass="min-w-0"
+        answer={typeof answer === "string" ? answer : undefined}
+      />
     </EquationGrid>
   );
 }

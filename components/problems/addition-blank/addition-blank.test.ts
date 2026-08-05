@@ -15,4 +15,11 @@ describe("AdditionBlank", () => {
     expect(html).toContain("=");
     expect(html.toLowerCase()).not.toContain("<input");
   });
+
+  it("fills the sum when showAnswer is true", () => {
+    const html = renderToStaticMarkup(
+      createElement(AdditionBlank, { a: 3, b: 5, showAnswer: true }),
+    );
+    expect(html).toContain("8");
+  });
 });

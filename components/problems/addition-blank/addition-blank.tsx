@@ -7,13 +7,18 @@ import {
 } from "@/components/problems/shared/equation-layout";
 import { cn } from "@/lib/utils";
 import type { AdditionBlankProps } from "@/components/problems/types";
+import { solveProblem } from "@/lib/projects/solve-problem";
 
 export function AdditionBlank({
   a,
   b,
   fontSize = "1.25rem",
   className,
-}: AdditionBlankProps) {
+  showAnswer = false,
+}: AdditionBlankProps & { showAnswer?: boolean }) {
+  const answer = showAnswer
+    ? solveProblem("addition-blank", { a, b })
+    : undefined;
   return (
     <EquationGrid
       variant="binary-eq"
@@ -24,7 +29,11 @@ export function AdditionBlank({
       <OpCell>+</OpCell>
       <DigitCell>{b}</DigitCell>
       <EqCell />
-      <AnswerBlank className={cn("w-full")} minWidthClass="min-w-0" />
+      <AnswerBlank
+        className={cn("w-full")}
+        minWidthClass="min-w-0"
+        answer={typeof answer === "string" ? answer : undefined}
+      />
     </EquationGrid>
   );
 }

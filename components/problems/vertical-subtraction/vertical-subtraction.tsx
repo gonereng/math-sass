@@ -1,12 +1,23 @@
 import { AnswerBlank, ProblemRow } from "@/components/problems/shared/answer-blank";
 import { cn } from "@/lib/utils";
+import { solveProblem } from "@/lib/projects/solve-problem";
 
 export function VerticalSubtraction({
   a,
   b,
   fontSize = "1.25rem",
   className,
-}: { a: number; b: number; fontSize?: string | number; className?: string }) {
+  showAnswer = false,
+}: {
+  a: number;
+  b: number;
+  fontSize?: string | number;
+  className?: string;
+  showAnswer?: boolean;
+}) {
+  const answer = showAnswer
+    ? solveProblem("vertical-subtraction", { a, b })
+    : undefined;
   return (
     <ProblemRow fontSize={fontSize} className={cn("font-mono tabular-nums", className)}>
       <div
@@ -19,7 +30,11 @@ export function VerticalSubtraction({
         <span>{b}</span>
         <span className="col-span-2 border-b-2 border-black" />
         <span />
-        <AnswerBlank className="w-full" minWidthClass="min-w-0" />
+        <AnswerBlank
+          className="w-full"
+          minWidthClass="min-w-0"
+          answer={typeof answer === "string" ? answer : undefined}
+        />
       </div>
     </ProblemRow>
   );
