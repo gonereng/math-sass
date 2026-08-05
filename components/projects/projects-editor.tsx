@@ -21,6 +21,7 @@ import {
 } from "@/lib/actions/projects";
 import { canExportPdf } from "@/lib/projects/can-export-pdf";
 import { chunkPages } from "@/lib/projects/chunk-pages";
+import { exportLetterPagesToPdf } from "@/lib/projects/export-letter-pdf";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
 import { toast } from "sonner";
 
@@ -251,6 +252,26 @@ export function ProjectsEditor({
     }
   }
 
+  async function handleExportPdf() {
+    const root = document.querySelector<HTMLElement>("[data-print-root]");
+    if (!root) {
+      toast.error("Nothing to export");
+      return;
+    }
+    setBusy(true);
+    try {
+      await exportLetterPagesToPdf({
+        root,
+        fileName: project.name.trim() || "worksheet",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not create PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex h-[calc(100dvh-2rem)] flex-col gap-4 overflow-hidden">
       <div
@@ -429,7 +450,9 @@ export function ProjectsEditor({
               type="button"
               variant="outline"
               disabled={busy || !exportGate.ok}
-              onClick={() => window.print()}
+              onClick={() => {
+                void handleExportPdf();
+              }}
             >
               Export PDF
             </Button>
