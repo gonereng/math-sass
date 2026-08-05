@@ -465,14 +465,14 @@ export function ProjectsEditor({
                     />
                   </LetterShell>
                 ))}
-                {chunkPages(pages, 4).map((group, groupIndex) => (
+                {chunkPages(pages, 2).map((group, groupIndex) => (
                   <LetterShell
                     key={`answer-key-${groupIndex}`}
                     className="print-page"
                   >
                     <AnswerKeyPage
                       cells={group.map((page, i) => ({
-                        label: `Page ${groupIndex * 4 + i + 1}`,
+                        label: `Page ${groupIndex * 2 + i + 1}`,
                         layoutId: page.layoutId,
                         items: page.items,
                       }))}

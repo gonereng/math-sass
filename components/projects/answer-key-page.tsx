@@ -15,24 +15,24 @@ export function AnswerKeyPage({ cells }: { cells: AnswerKeyCell[] }) {
       <h2 className="shrink-0 text-sm font-semibold tracking-wide uppercase">
         Answer Key
       </h2>
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2">
-        {Array.from({ length: 4 }, (_, i) => {
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
+        {Array.from({ length: 2 }, (_, i) => {
           const cell = cells[i];
           return (
             <div
               key={i}
-              className="min-h-0 overflow-hidden border border-black/40 p-1"
+              className="min-h-0 overflow-hidden border border-black/40 p-2"
             >
               {cell ? (
                 <>
-                  <p className="mb-0.5 text-[0.65rem] font-medium leading-tight">
+                  <p className="mb-1 text-xs font-medium leading-tight">
                     {cell.label}
                   </p>
                   <WorksheetPageView
                     layoutId={cell.layoutId}
                     items={cell.items}
                     showAnswer
-                    fontSize="0.7rem"
+                    fontSize="0.95rem"
                   />
                 </>
               ) : null}
