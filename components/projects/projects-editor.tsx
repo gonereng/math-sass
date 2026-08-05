@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { AnswerKeyPage } from "@/components/projects/answer-key-page";
 import { LetterShell } from "@/components/templates/letter-shell";
 import { WorksheetPageView } from "@/components/worksheets/worksheet-page-view";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
   type ProjectWithDetails,
 } from "@/lib/actions/projects";
 import { canExportPdf } from "@/lib/projects/can-export-pdf";
+import { chunkPages } from "@/lib/projects/chunk-pages";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
 import { toast } from "sonner";
 
@@ -460,6 +462,20 @@ export function ProjectsEditor({
                     <WorksheetPageView
                       layoutId={page.layoutId}
                       items={page.items}
+                    />
+                  </LetterShell>
+                ))}
+                {chunkPages(pages, 4).map((group, groupIndex) => (
+                  <LetterShell
+                    key={`answer-key-${groupIndex}`}
+                    className="print-page"
+                  >
+                    <AnswerKeyPage
+                      cells={group.map((page, i) => ({
+                        label: `Page ${groupIndex * 4 + i + 1}`,
+                        layoutId: page.layoutId,
+                        items: page.items,
+                      }))}
                     />
                   </LetterShell>
                 ))}
