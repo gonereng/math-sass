@@ -4,19 +4,24 @@ import { cn } from "@/lib/utils";
 export function AnswerBlank({
   className,
   minWidthClass = "min-w-[4rem]",
+  answer,
 }: {
   className?: string;
   minWidthClass?: string;
+  answer?: string | number | null;
 }) {
+  const filled = answer != null && String(answer) !== "";
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "inline-block border-b-2 border-black align-baseline",
+        "inline-block border-b-2 border-black align-baseline text-center",
         minWidthClass,
         className,
       )}
-    />
+    >
+      {filled ? String(answer) : "\u00a0"}
+    </span>
   );
 }
 
