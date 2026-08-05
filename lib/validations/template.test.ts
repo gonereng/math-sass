@@ -5,12 +5,35 @@ import {
 } from "./template";
 
 describe("minMaxSchema", () => {
-  it("accepts valid range", () => {
-    expect(minMaxSchema.safeParse({ min: 1, max: 10 }).success).toBe(true);
+  it("accepts valid range with count", () => {
+    expect(
+      minMaxSchema.safeParse({ min: 1, max: 10, count: 1 }).success,
+    ).toBe(true);
+    expect(
+      minMaxSchema.safeParse({ min: 1, max: 10, count: 50 }).success,
+    ).toBe(true);
   });
 
   it("rejects min > max", () => {
-    expect(minMaxSchema.safeParse({ min: 5, max: 2 }).success).toBe(false);
+    expect(
+      minMaxSchema.safeParse({ min: 5, max: 2, count: 1 }).success,
+    ).toBe(false);
+  });
+
+  it("rejects count below 1", () => {
+    expect(
+      minMaxSchema.safeParse({ min: 1, max: 10, count: 0 }).success,
+    ).toBe(false);
+  });
+
+  it("rejects count above 50", () => {
+    expect(
+      minMaxSchema.safeParse({ min: 1, max: 10, count: 51 }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing count", () => {
+    expect(minMaxSchema.safeParse({ min: 1, max: 10 }).success).toBe(false);
   });
 });
 

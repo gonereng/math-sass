@@ -4,6 +4,7 @@ export const minMaxSchema = z
   .object({
     min: z.coerce.number().int(),
     max: z.coerce.number().int(),
+    count: z.coerce.number().int().min(1).max(50),
   })
   .refine((d) => d.min <= d.max, {
     message: "Min must be less than or equal to max",
