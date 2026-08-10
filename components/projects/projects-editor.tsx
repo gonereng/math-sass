@@ -32,6 +32,7 @@ import {
 } from "@/lib/i18n/sheet-header-locales";
 import {
   SHEET_BACKGROUND_OPTIONS,
+  getSheetBackground,
   isSheetBackgroundId,
 } from "@/lib/sheet-backgrounds";
 import { toast } from "sonner";
@@ -565,7 +566,8 @@ export function ProjectsEditor({
               <span className="shrink-0">Background</span>
               <select
                 className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm text-foreground"
-                value={project.backgroundId}
+                value={getSheetBackground(project.backgroundId).id}
+                aria-label="Sheet background"
                 disabled={busy}
                 onChange={(e) => {
                   void handleBackgroundChange(e.target.value);

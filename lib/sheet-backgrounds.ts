@@ -8,7 +8,7 @@ export const SHEET_BACKGROUNDS = {
   "kids-frame": {
     id: "kids-frame",
     label: "Kids frame",
-    src: "/backgrounds/kids-frame.png",
+    src: "/backgrounds/kids-frame.jpg",
     showPageBorder: false,
   },
 } as const;

@@ -73,9 +73,18 @@
     width: 100% !important;
     height: 100% !important;
     aspect-ratio: auto !important;
+  }
+
+  .print-page
+    .letter-shell__silhouette[data-sheet-background="blank"] {
     border-width: 2px !important;
     border-color: black !important;
     background: white !important;
+  }
+
+  .print-page
+    .letter-shell__silhouette:not([data-sheet-background="blank"]) {
+    border: none !important;
   }
 
   .print-page .letter-shell__content {

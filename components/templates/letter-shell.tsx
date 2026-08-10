@@ -83,6 +83,7 @@ export function LetterShellView({
         <div
           ref={pageRef}
           aria-hidden
+          data-sheet-background={bg.id}
           className={cn(
             "letter-shell__silhouette pointer-events-none absolute top-0 left-0 z-0",
             !bg.src && "bg-white",

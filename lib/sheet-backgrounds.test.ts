@@ -17,7 +17,7 @@ describe("sheet backgrounds", () => {
     expect(SHEET_BACKGROUNDS["kids-frame"]).toMatchObject({
       id: "kids-frame",
       label: "Kids frame",
-      src: "/backgrounds/kids-frame.png",
+      src: "/backgrounds/kids-frame.jpg",
       showPageBorder: false,
     });
   });

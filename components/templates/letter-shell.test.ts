@@ -49,7 +49,8 @@ describe("LetterShellView", () => {
     const html = renderToStaticMarkup(
       createElement(LetterShellView, { backgroundId: "kids-frame" }, "x"),
     );
-    expect(html).toContain("/backgrounds/kids-frame.png");
+    expect(html).toContain('data-sheet-background="kids-frame"');
+    expect(html).toContain("/backgrounds/kids-frame.jpg");
     expect(html).not.toContain("border-2 border-black");
   });
 
@@ -57,6 +58,7 @@ describe("LetterShellView", () => {
     const html = renderToStaticMarkup(
       createElement(LetterShellView, { backgroundId: "blank" }, "x"),
     );
+    expect(html).toContain('data-sheet-background="blank"');
     expect(html).toContain("border-2 border-black");
   });
 });
