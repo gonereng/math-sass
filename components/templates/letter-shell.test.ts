@@ -44,4 +44,19 @@ describe("LetterShellView", () => {
     expect(html).toContain('data-overflow-wash="true"');
     expect(html).toContain("letter-shell-viewport");
   });
+
+  it("applies kids-frame background and hides black border", () => {
+    const html = renderToStaticMarkup(
+      createElement(LetterShellView, { backgroundId: "kids-frame" }, "x"),
+    );
+    expect(html).toContain("/backgrounds/kids-frame.png");
+    expect(html).not.toContain("border-2 border-black");
+  });
+
+  it("keeps black border for blank", () => {
+    const html = renderToStaticMarkup(
+      createElement(LetterShellView, { backgroundId: "blank" }, "x"),
+    );
+    expect(html).toContain("border-2 border-black");
+  });
 });

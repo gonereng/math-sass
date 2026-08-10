@@ -19,6 +19,11 @@ import {
   getSheetHeaderLabels,
   type SheetHeaderLocaleId,
 } from "@/lib/i18n/sheet-header-locales";
+import {
+  DEFAULT_SHEET_BACKGROUND_ID,
+  getSheetBackground,
+  type SheetBackgroundId,
+} from "@/lib/sheet-backgrounds";
 
 /**
  * Editor letter page: fixed 8.5×11in sheet, uniformly scaled to fit the column.
@@ -32,6 +37,7 @@ export function LetterShellView({
   scale = 1,
   stageHeight = 0,
   headerLocale = DEFAULT_SHEET_HEADER_LOCALE,
+  backgroundId = DEFAULT_SHEET_BACKGROUND_ID,
   contentRef,
   pageRef,
   shellRef,
@@ -47,6 +53,7 @@ export function LetterShellView({
   /** Unscaled stage height (at least one letter page; grows with spill). */
   stageHeight?: number;
   headerLocale?: SheetHeaderLocaleId;
+  backgroundId?: SheetBackgroundId | string;
   contentRef?: Ref<HTMLDivElement>;
   pageRef?: Ref<HTMLDivElement>;
   shellRef?: Ref<HTMLDivElement>;
@@ -55,6 +62,7 @@ export function LetterShellView({
   const scaledHeight =
     stageHeight > 0 ? stageHeight * scale : undefined;
   const labels = getSheetHeaderLabels(headerLocale);
+  const bg = getSheetBackground(backgroundId);
 
   return (
     <div
@@ -70,12 +78,22 @@ export function LetterShellView({
           minHeight: `${LETTER_HEIGHT_IN}in`,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
+          ...(bg.src
+            ? {
+                backgroundImage: `url(${bg.src})`,
+                backgroundSize: "100% 100%",
+                backgroundRepeat: "no-repeat",
+              }
+            : {}),
         }}
       >
         <div
           ref={pageRef}
           aria-hidden
-          className="letter-shell__silhouette pointer-events-none absolute top-0 left-0 z-0 border-2 border-black bg-white"
+          className={cn(
+            "letter-shell__silhouette pointer-events-none absolute top-0 left-0 z-0 bg-white",
+            bg.showPageBorder && "border-2 border-black",
+          )}
           style={{
             width: `${LETTER_WIDTH_IN}in`,
             height: `${LETTER_HEIGHT_IN}in`,
@@ -122,11 +140,13 @@ export function LetterShell({
   className,
   onOverflowChange,
   headerLocale = DEFAULT_SHEET_HEADER_LOCALE,
+  backgroundId = DEFAULT_SHEET_BACKGROUND_ID,
 }: {
   children: ReactNode;
   className?: string;
   onOverflowChange?: (overflowing: boolean) => void;
   headerLocale?: SheetHeaderLocaleId;
+  backgroundId?: SheetBackgroundId | string;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -174,6 +194,7 @@ export function LetterShell({
       scale={scale}
       stageHeight={stageHeight}
       headerLocale={headerLocale}
+      backgroundId={backgroundId}
       pageRef={pageRef}
       contentRef={contentRef}
       shellRef={shellRef}
