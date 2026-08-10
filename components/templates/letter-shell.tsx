@@ -78,25 +78,26 @@ export function LetterShellView({
           minHeight: `${LETTER_HEIGHT_IN}in`,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
-          ...(bg.src
-            ? {
-                backgroundImage: `url(${bg.src})`,
-                backgroundSize: "100% 100%",
-                backgroundRepeat: "no-repeat",
-              }
-            : {}),
         }}
       >
         <div
           ref={pageRef}
           aria-hidden
           className={cn(
-            "letter-shell__silhouette pointer-events-none absolute top-0 left-0 z-0 bg-white",
+            "letter-shell__silhouette pointer-events-none absolute top-0 left-0 z-0",
+            !bg.src && "bg-white",
             bg.showPageBorder && "border-2 border-black",
           )}
           style={{
             width: `${LETTER_WIDTH_IN}in`,
             height: `${LETTER_HEIGHT_IN}in`,
+            ...(bg.src
+              ? {
+                  backgroundImage: `url(${bg.src})`,
+                  backgroundSize: "100% 100%",
+                  backgroundRepeat: "no-repeat",
+                }
+              : {}),
           }}
         />
 
