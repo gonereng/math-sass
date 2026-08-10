@@ -15,14 +15,13 @@ import {
   generateProject,
   removeProjectSection,
   reorderProjectSections,
-  updateProjectBackground,
   updateProjectName,
   updateSectionPageCount,
   type ProjectWithDetails,
 } from "@/lib/actions/projects";
 import { canExportPdf } from "@/lib/projects/can-export-pdf";
 import { chunkPages } from "@/lib/projects/chunk-pages";
-import { exportLetterPagesToPdf, exportSectionFirstPagesToPdf } from "@/lib/projects/export-letter-pdf";
+import { exportLetterPagesToPdf } from "@/lib/projects/export-letter-pdf";
 import { compositionFingerprint } from "@/lib/projects/fingerprint";
 import {
   DEFAULT_SHEET_HEADER_LOCALE,
@@ -31,9 +30,8 @@ import {
   type SheetHeaderLocaleId,
 } from "@/lib/i18n/sheet-header-locales";
 import {
-  SHEET_BACKGROUND_OPTIONS,
-  getSheetBackground,
-  isSheetBackgroundId,
+  DEFAULT_CONTENT_INSET_IN,
+  DEFAULT_SHEET_BACKGROUND_ID,
 } from "@/lib/sheet-backgrounds";
 import { toast } from "sonner";
 
@@ -61,12 +59,19 @@ export function ProjectsEditor({
   const [headerLocale, setHeaderLocale] = useState<SheetHeaderLocaleId>(
     DEFAULT_SHEET_HEADER_LOCALE,
   );
-  const [pendingSectionsPdf, setPendingSectionsPdf] = useState(false);
+  const [pageOverflowById, setPageOverflowById] = useState<
+    Record<string, boolean>
+  >({});
+  const pageOverflowing = Object.values(pageOverflowById).some(Boolean);
 
   useEffect(() => {
     setProject(initialProject);
     setTitleDraft(initialProject.name);
   }, [initialProject]);
+
+  useEffect(() => {
+    setPageOverflowById({});
+  }, [project.generatedPages]);
 
   useEffect(() => {
     setExpandedSectionId(null);
@@ -92,41 +97,6 @@ export function ProjectsEditor({
     fingerprint: currentFingerprint,
     lastGeneratedFingerprint: project.lastGeneratedFingerprint,
   });
-
-  useEffect(() => {
-    const LETTER_CONTENT_PX = 11 * 96 - 2 * 0.5 * 96;
-
-    function applyPrintScale() {
-      const root = document.querySelector("[data-print-root]");
-      if (!root) return;
-      const pages = root.querySelectorAll<HTMLElement>(".print-page");
-      pages.forEach((page) => {
-        const content = page.querySelector<HTMLElement>(
-          ".letter-shell__content",
-        );
-        if (!content) return;
-        const contentHeight = content.scrollHeight;
-        const scale =
-          contentHeight > LETTER_CONTENT_PX
-            ? Math.min(1, (LETTER_CONTENT_PX * 0.98) / contentHeight)
-            : 1;
-        content.style.setProperty("--print-scale", String(scale));
-      });
-    }
-
-    function clearPrintScale() {
-      document
-        .querySelectorAll<HTMLElement>(".letter-shell__content")
-        .forEach((el) => el.style.removeProperty("--print-scale"));
-    }
-
-    window.addEventListener("beforeprint", applyPrintScale);
-    window.addEventListener("afterprint", clearPrintScale);
-    return () => {
-      window.removeEventListener("beforeprint", applyPrintScale);
-      window.removeEventListener("afterprint", clearPrintScale);
-    };
-  }, [project.id, pages.length, project.lastGeneratedFingerprint]);
 
   async function handleDeleteProject() {
     setBusy(true);
@@ -223,24 +193,6 @@ export function ProjectsEditor({
     }
   }
 
-  async function handleBackgroundChange(next: string) {
-    if (!isSheetBackgroundId(next)) return;
-    setBusy(true);
-    try {
-      const result = await updateProjectBackground({
-        projectId: project.id,
-        backgroundId: next,
-      });
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      setProject(result.project);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleMoveSection(
     sectionId: string,
     direction: "up" | "down",
@@ -282,52 +234,10 @@ export function ProjectsEditor({
         return;
       }
       setProject(result.project);
-      setPendingSectionsPdf(true);
     } finally {
       setBusy(false);
     }
   }
-
-  useEffect(() => {
-    if (!pendingSectionsPdf) return;
-    if (pages.length === 0) {
-      setPendingSectionsPdf(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      // Wait for LetterShell to mount and finish first layout pass.
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-      await new Promise((r) => setTimeout(r, 200));
-      if (cancelled) return;
-
-      const root = document.querySelector<HTMLElement>("[data-print-root]");
-      if (!root) {
-        setPendingSectionsPdf(false);
-        return;
-      }
-
-      try {
-        await exportSectionFirstPagesToPdf({
-          root,
-          fileName: project.name.trim() || "worksheet",
-        });
-      } catch (err) {
-        console.error(err);
-        toast.error("Could not create sections PDF");
-      } finally {
-        if (!cancelled) setPendingSectionsPdf(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pendingSectionsPdf, pages, project.name]);
 
   async function handleExportPdf() {
     const root = document.querySelector<HTMLElement>("[data-print-root]");
@@ -562,30 +472,20 @@ export function ProjectsEditor({
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="shrink-0">Background</span>
-              <select
-                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm text-foreground"
-                value={getSheetBackground(project.backgroundId).id}
-                aria-label="Sheet background"
-                disabled={busy}
-                onChange={(e) => {
-                  void handleBackgroundChange(e.target.value);
-                }}
-              >
-                {SHEET_BACKGROUND_OPTIONS.map((background) => (
-                  <option key={background.id} value={background.id}>
-                    {background.label}
-                  </option>
-                ))}
-              </select>
-            </label>
             {stale ? (
               <p
                 role="status"
                 className="text-sm font-medium text-amber-700"
               >
                 Preview may be stale — generate again
+              </p>
+            ) : null}
+            {pageOverflowing && !stale ? (
+              <p
+                role="status"
+                className="text-sm font-medium text-red-700"
+              >
+                Content exceeds one page — cropped in preview
               </p>
             ) : null}
             {!exportGate.ok && !stale ? (
@@ -604,7 +504,10 @@ export function ProjectsEditor({
               </div>
             ) : (
               <div className="flex flex-col gap-8 pb-8" data-print-root>
-                {pages.map((page) => (
+                {pages.map((page) => {
+                  const section = sections.find((s) => s.id === page.sectionId);
+                  const snap = section?.templateSnapshot;
+                  return (
                   <div
                     key={page.id}
                     className="print-page"
@@ -613,7 +516,18 @@ export function ProjectsEditor({
                   >
                     <LetterShell
                       headerLocale={headerLocale}
-                      backgroundId={project.backgroundId}
+                      backgroundId={
+                        snap?.backgroundId ?? DEFAULT_SHEET_BACKGROUND_ID
+                      }
+                      contentInsetIn={
+                        snap?.contentInsetIn ?? DEFAULT_CONTENT_INSET_IN
+                      }
+                      onOverflowChange={(overflowing) => {
+                        setPageOverflowById((prev) => {
+                          if (prev[page.id] === overflowing) return prev;
+                          return { ...prev, [page.id]: overflowing };
+                        });
+                      }}
                     >
                       <WorksheetPageView
                         layoutId={page.layoutId}
@@ -621,7 +535,8 @@ export function ProjectsEditor({
                       />
                     </LetterShell>
                   </div>
-                ))}
+                  );
+                })}
                 {chunkPages(pages, 2).map((group, groupIndex) => (
                   <div
                     key={`answer-key-${groupIndex}`}

@@ -88,13 +88,16 @@
   }
 
   .print-page .letter-shell__content {
+    position: absolute !important;
+    top: var(--content-inset, 0.5in) !important;
+    right: var(--content-inset, 0.5in) !important;
+    bottom: var(--content-inset, 0.5in) !important;
+    left: var(--content-inset, 0.5in) !important;
+    height: auto !important;
     min-height: 0 !important;
-    height: 100% !important;
-    box-sizing: border-box;
-    padding: 0.5in !important;
-    transform-origin: top left;
-    /* --print-scale set by JS on beforeprint when needed; default 1 */
-    transform: scale(var(--print-scale, 1));
+    padding: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
   }
 
   /* Hide overflow wash in print */

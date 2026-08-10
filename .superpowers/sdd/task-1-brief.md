@@ -1,154 +1,122 @@
-### Task 1: Shared equation layout helpers
+﻿### Task 1: Background registry + asset
 
 **Files:**
-- Create: `components/problems/shared/equation-layout.tsx`
-- Create: `components/problems/shared/equation-layout.test.ts`
+- Create: `lib/sheet-backgrounds.ts`
+- Create: `lib/sheet-backgrounds.test.ts`
+- Create: `public/backgrounds/kids-frame.png` (copy from chat attachment `math_background-â€¦.png`; if missing, ask user to re-attach)
 
 **Interfaces:**
-- Produces:
-  - `DIGIT_COLS_HORIZONTAL = "2.5ch"` (use as CSS length in templates)
-  - `DIGIT_COLS_VERTICAL = "3ch"`
-  - `EquationGrid({ variant, fontSize?, className?, children })` where `variant` is `"binary-eq" | "missing-mid" | "vertical" | "compare"`
-  - `DigitCell({ children, className? })`
-  - `OpCell({ children, className? })`
-  - `EqCell({ className? })` renders `=`
-  - Column templates (exact):
-    - `binary-eq`: `2.5ch 1.5ch 2.5ch 1.5ch minmax(4rem, auto)` → a | op | b | = | blank
-    - `missing-mid`: `2.5ch 1.5ch minmax(2.5rem, auto) 1.5ch 2.5ch` → a | op | blank | = | c
-    - `vertical`: `1.5ch 3ch` → op | digits
-    - `compare`: `2.5ch minmax(2rem, auto) 2.5ch` → a | blank | b
+- Produces: `SHEET_BACKGROUNDS`, `SheetBackgroundId`, `DEFAULT_SHEET_BACKGROUND_ID`, `SHEET_BACKGROUND_OPTIONS`, `isSheetBackgroundId`, `getSheetBackground`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `components/problems/shared/equation-layout.test.ts`:
-
 ```ts
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+// lib/sheet-backgrounds.test.ts
 import { describe, expect, it } from "vitest";
 import {
-  DigitCell,
-  EqCell,
-  EquationGrid,
-  OpCell,
-} from "./equation-layout";
-import { AnswerBlank } from "./answer-blank";
+  DEFAULT_SHEET_BACKGROUND_ID,
+  SHEET_BACKGROUNDS,
+  getSheetBackground,
+  isSheetBackgroundId,
+} from "./sheet-backgrounds";
 
-describe("EquationGrid", () => {
-  it("renders binary-eq cells in order with grid class", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        EquationGrid,
-        { variant: "binary-eq" },
-        createElement(DigitCell, null, "3"),
-        createElement(OpCell, null, "+"),
-        createElement(DigitCell, null, "5"),
-        createElement(EqCell),
-        createElement(AnswerBlank),
-      ),
-    );
-    expect(html).toContain('data-equation-grid="binary-eq"');
-    expect(html).toContain("3");
-    expect(html).toContain("+");
-    expect(html).toContain("5");
-    expect(html).toContain("=");
-    expect(html.toLowerCase()).not.toContain("<input");
+describe("sheet backgrounds", () => {
+  it("defaults to blank", () => {
+    expect(DEFAULT_SHEET_BACKGROUND_ID).toBe("blank");
+    expect(getSheetBackground().src).toBeNull();
+    expect(getSheetBackground().showPageBorder).toBe(true);
+  });
+
+  it("includes kids-frame without page border", () => {
+    expect(SHEET_BACKGROUNDS["kids-frame"]).toMatchObject({
+      id: "kids-frame",
+      label: "Kids frame",
+      src: "/backgrounds/kids-frame.png",
+      showPageBorder: false,
+    });
+  });
+
+  it("falls back to blank for unknown ids", () => {
+    expect(getSheetBackground("nope" as "blank").id).toBe("blank");
+  });
+
+  it("validates ids", () => {
+    expect(isSheetBackgroundId("blank")).toBe(true);
+    expect(isSheetBackgroundId("kids-frame")).toBe(true);
+    expect(isSheetBackgroundId("x")).toBe(false);
   });
 });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- components/problems/shared/equation-layout.test.ts`
+Run: `npx vitest run lib/sheet-backgrounds.test.ts`  
+Expected: FAIL (module not found)
 
-Expected: FAIL — module `./equation-layout` not found.
+- [ ] **Step 3: Implement registry**
 
-- [ ] **Step 3: Implement helpers**
+```ts
+// lib/sheet-backgrounds.ts
+export const SHEET_BACKGROUNDS = {
+  blank: {
+    id: "blank",
+    label: "Blank",
+    src: null as string | null,
+    showPageBorder: true,
+  },
+  "kids-frame": {
+    id: "kids-frame",
+    label: "Kids frame",
+    src: "/backgrounds/kids-frame.png",
+    showPageBorder: false,
+  },
+} as const;
 
-Create `components/problems/shared/equation-layout.tsx`:
+export type SheetBackgroundId = keyof typeof SHEET_BACKGROUNDS;
+export type SheetBackground = (typeof SHEET_BACKGROUNDS)[SheetBackgroundId];
 
-```tsx
-import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+export const DEFAULT_SHEET_BACKGROUND_ID: SheetBackgroundId = "blank";
 
-const VARIANT_COLUMNS: Record<
-  "binary-eq" | "missing-mid" | "vertical" | "compare",
-  string
-> = {
-  "binary-eq": "2.5ch 1.5ch 2.5ch 1.5ch minmax(4rem, auto)",
-  "missing-mid": "2.5ch 1.5ch minmax(2.5rem, auto) 1.5ch 2.5ch",
-  vertical: "1.5ch 3ch",
-  compare: "2.5ch minmax(2rem, auto) 2.5ch",
-};
+export const SHEET_BACKGROUND_OPTIONS = Object.values(
+  SHEET_BACKGROUNDS,
+) as SheetBackground[];
 
-export function EquationGrid({
-  variant,
-  fontSize = "1.25rem",
-  className,
-  children,
-}: {
-  variant: keyof typeof VARIANT_COLUMNS;
-  fontSize?: string | number;
-  className?: string;
-  children: ReactNode;
-}) {
-  const size = typeof fontSize === "number" ? `${fontSize}px` : fontSize;
-  return (
-    <div
-      data-equation-grid={variant}
-      className={cn(
-        "inline-grid items-baseline gap-x-1.5 font-mono font-medium tabular-nums text-black",
-        className,
-      )}
-      style={{
-        fontSize: size,
-        gridTemplateColumns: VARIANT_COLUMNS[variant],
-      }}
-    >
-      {children}
-    </div>
-  );
+export function isSheetBackgroundId(value: string): value is SheetBackgroundId {
+  return value in SHEET_BACKGROUNDS;
 }
 
-export function DigitCell({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <span className={cn("text-right", className)}>{children}</span>
-  );
-}
-
-export function OpCell({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <span className={cn("text-center", className)}>{children}</span>;
-}
-
-export function EqCell({ className }: { className?: string }) {
-  return <span className={cn("text-center", className)}>=</span>;
+export function getSheetBackground(
+  id: SheetBackgroundId | string = DEFAULT_SHEET_BACKGROUND_ID,
+): SheetBackground {
+  if (isSheetBackgroundId(id)) return SHEET_BACKGROUNDS[id];
+  return SHEET_BACKGROUNDS.blank;
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+Fix the fallback test to call `getSheetBackground("nope")` with a `string` param (signature above accepts `string`).
 
-Run: `npm test -- components/problems/shared/equation-layout.test.ts`
+- [ ] **Step 4: Copy asset**
 
-Expected: PASS.
+```powershell
+New-Item -ItemType Directory -Force -Path public/backgrounds
+# Copy from Cursor assets path if present; otherwise ask user to drop the PNG again
+Copy-Item "<source-math_background.png>" public/backgrounds/kids-frame.png
+```
 
-- [ ] **Step 5: Commit**
+Confirm: `Test-Path public/backgrounds/kids-frame.png` â†’ `True`
+
+- [ ] **Step 5: Run tests**
+
+Run: `npx vitest run lib/sheet-backgrounds.test.ts`  
+Expected: PASS
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add components/problems/shared/equation-layout.tsx components/problems/shared/equation-layout.test.ts
-git commit -m "feat: add shared equation grid layout helpers"
+git add lib/sheet-backgrounds.ts lib/sheet-backgrounds.test.ts public/backgrounds/kids-frame.png
+git commit -m "feat: add sheet background registry and kids-frame asset"
 ```
 
 ---
+
 

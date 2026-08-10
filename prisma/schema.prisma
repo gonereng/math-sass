@@ -60,14 +60,16 @@ model VerificationToken {
 }
 
 model Template {
-  id        String         @id @default(cuid())
-  userId    String
-  name      String
-  layoutId  String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     TemplateItem[]
+  id             String         @id @default(cuid())
+  userId         String
+  name           String
+  layoutId       String
+  backgroundId   String         @default("blank")
+  contentInsetIn Float          @default(0.5)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items          TemplateItem[]
 
   @@index([userId])
 }
@@ -90,7 +92,6 @@ model Project {
   id                       String           @id @default(cuid())
   userId                   String
   name                     String
-  backgroundId             String           @default("blank")
   lastGeneratedFingerprint String?
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt

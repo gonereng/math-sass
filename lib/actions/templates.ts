@@ -15,13 +15,18 @@ import {
   deleteTemplateSchema,
   minMaxSchema,
   updateLayoutSchema,
+  updateTemplateBackgroundSchema,
+  updateTemplateContentInsetSchema,
   updateTemplateNameSchema,
 } from "@/lib/validations/template";
+import { getSheetBackground } from "@/lib/sheet-backgrounds";
 
 export type TemplateWithItems = {
   id: string;
   name: string;
   layoutId: string;
+  backgroundId: string;
+  contentInsetIn: number;
   items: {
     id: string;
     boxId: string;
@@ -41,6 +46,8 @@ function mapTemplate(template: {
   id: string;
   name: string;
   layoutId: string;
+  backgroundId: string;
+  contentInsetIn: number;
   items: {
     id: string;
     boxId: string;
@@ -55,6 +62,8 @@ function mapTemplate(template: {
     id: template.id,
     name: template.name,
     layoutId: template.layoutId,
+    backgroundId: template.backgroundId,
+    contentInsetIn: template.contentInsetIn,
     items: template.items.map((item) => ({
       id: item.id,
       boxId: item.boxId,
@@ -469,6 +478,84 @@ export async function updateTemplateLayout(input: {
     }
 
     return { ok: true, template: mapTemplate(updated) };
+  } catch {
+    return { ok: false, error: UNEXPECTED };
+  }
+}
+
+export async function updateTemplateBackground(input: {
+  templateId: string;
+  backgroundId: string;
+}): Promise<{ ok: true; template: TemplateWithItems } | ActionError> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const parsed = updateTemplateBackgroundSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid background" };
+  }
+
+  try {
+    const background = getSheetBackground(parsed.data.backgroundId);
+    const result = await prisma.template.updateMany({
+      where: { id: parsed.data.templateId, userId },
+      data: {
+        backgroundId: parsed.data.backgroundId,
+        contentInsetIn: background.defaultContentInsetIn,
+      },
+    });
+    if (result.count === 0) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
+    const template = await prisma.template.findFirst({
+      where: { id: parsed.data.templateId, userId },
+      include: { items: { orderBy: { sortOrder: "asc" } } },
+    });
+    if (!template) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
+    return { ok: true, template: mapTemplate(template) };
+  } catch {
+    return { ok: false, error: UNEXPECTED };
+  }
+}
+
+export async function updateTemplateContentInset(input: {
+  templateId: string;
+  contentInsetIn: number;
+}): Promise<{ ok: true; template: TemplateWithItems } | ActionError> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { ok: false, error: UNEXPECTED };
+  }
+
+  const parsed = updateTemplateContentInsetSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid inset" };
+  }
+
+  try {
+    const result = await prisma.template.updateMany({
+      where: { id: parsed.data.templateId, userId },
+      data: { contentInsetIn: parsed.data.contentInsetIn },
+    });
+    if (result.count === 0) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
+    const template = await prisma.template.findFirst({
+      where: { id: parsed.data.templateId, userId },
+      include: { items: { orderBy: { sortOrder: "asc" } } },
+    });
+    if (!template) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
+    return { ok: true, template: mapTemplate(template) };
   } catch {
     return { ok: false, error: UNEXPECTED };
   }

@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
   type Ref,
 } from "react";
@@ -20,7 +21,9 @@ import {
   type SheetHeaderLocaleId,
 } from "@/lib/i18n/sheet-header-locales";
 import {
+  DEFAULT_CONTENT_INSET_IN,
   DEFAULT_SHEET_BACKGROUND_ID,
+  clampContentInsetIn,
   getSheetBackground,
   type SheetBackgroundId,
 } from "@/lib/sheet-backgrounds";
@@ -28,16 +31,18 @@ import {
 /**
  * Editor letter page: fixed 8.5×11in sheet, uniformly scaled to fit the column.
  * Fonts/padding scale with the page. Print uses real inches via print.css (no screen scale).
+ * Content is clipped to the inset box so overflow does not paint over the frame.
  */
 export function LetterShellView({
   children,
   className,
   overflowing = false,
-  pageHeight = 0,
+  pageHeight: _pageHeight = 0,
   scale = 1,
   stageHeight = 0,
   headerLocale = DEFAULT_SHEET_HEADER_LOCALE,
   backgroundId = DEFAULT_SHEET_BACKGROUND_ID,
+  contentInsetIn = DEFAULT_CONTENT_INSET_IN,
   contentRef,
   pageRef,
   shellRef,
@@ -46,23 +51,27 @@ export function LetterShellView({
   children: ReactNode;
   className?: string;
   overflowing?: boolean;
-  /** Unscaled silhouette height in px; wash top + overflow math. */
+  /** Unscaled silhouette height in px (kept for callers / overflow measurement). */
   pageHeight?: number;
   /** Uniform fit scale applied to the fixed letter sheet. */
   scale?: number;
-  /** Unscaled stage height (at least one letter page; grows with spill). */
+  /** Unscaled stage height (fixed to one letter page). */
   stageHeight?: number;
   headerLocale?: SheetHeaderLocaleId;
   backgroundId?: SheetBackgroundId | string;
+  /** Content padding in inches (clamped by caller or clampContentInsetIn). */
+  contentInsetIn?: number;
   contentRef?: Ref<HTMLDivElement>;
   pageRef?: Ref<HTMLDivElement>;
   shellRef?: Ref<HTMLDivElement>;
   viewportRef?: Ref<HTMLDivElement>;
 }) {
+  void _pageHeight;
   const scaledHeight =
     stageHeight > 0 ? stageHeight * scale : undefined;
   const labels = getSheetHeaderLabels(headerLocale);
   const bg = getSheetBackground(backgroundId);
+  const inset = `${clampContentInsetIn(contentInsetIn)}in`;
 
   return (
     <div
@@ -72,10 +81,10 @@ export function LetterShellView({
     >
       <div
         ref={shellRef}
-        className="letter-shell relative origin-top-left bg-white text-black shadow-sm"
+        className="letter-shell relative origin-top-left overflow-hidden bg-white text-black shadow-sm"
         style={{
           width: `${LETTER_WIDTH_IN}in`,
-          minHeight: `${LETTER_HEIGHT_IN}in`,
+          height: `${LETTER_HEIGHT_IN}in`,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
         }}
@@ -102,34 +111,37 @@ export function LetterShellView({
           }}
         />
 
+        {/*
+          Inset via absolute edges (not padding) so overflow:hidden clips at the
+          white content box — padding would still allow paint over the frame.
+        */}
         <div
-          className="relative z-10"
+          ref={contentRef}
+          className="letter-shell__content absolute z-10 overflow-hidden text-black"
           style={
-            pageHeight > 0
-              ? { minHeight: pageHeight }
-              : { minHeight: `${LETTER_HEIGHT_IN}in` }
+            {
+              top: inset,
+              right: inset,
+              bottom: inset,
+              left: inset,
+              "--content-inset": inset,
+            } as CSSProperties
           }
         >
-          <div
-            ref={contentRef}
-            className="letter-shell__content text-black"
-            style={{ padding: "0.5in" }}
-          >
-            <header className="mb-6 flex w-full flex-wrap items-baseline justify-between gap-y-3 text-sm">
-              <ShellBlank label={labels.name} widthClass="min-w-[10rem]" />
-              <ShellBlank label={labels.classLabel} widthClass="min-w-[6rem]" />
-              <ShellBlank label={labels.date} widthClass="min-w-[6rem]" />
-            </header>
-            <div>{children}</div>
-          </div>
+          <header className="mb-6 flex w-full flex-wrap items-baseline justify-between gap-y-3 text-sm">
+            <ShellBlank label={labels.name} widthClass="min-w-[10rem]" />
+            <ShellBlank label={labels.classLabel} widthClass="min-w-[6rem]" />
+            <ShellBlank label={labels.date} widthClass="min-w-[6rem]" />
+          </header>
+          <div>{children}</div>
         </div>
 
-        {overflowing && pageHeight > 0 ? (
+        {overflowing ? (
           <div
             data-overflow-wash="true"
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-red-500/25"
-            style={{ top: pageHeight }}
+            className="pointer-events-none absolute z-20 h-10 bg-gradient-to-t from-red-500/35 to-transparent"
+            style={{ left: inset, right: inset, bottom: inset }}
           />
         ) : null}
       </div>
@@ -143,12 +155,14 @@ export function LetterShell({
   onOverflowChange,
   headerLocale = DEFAULT_SHEET_HEADER_LOCALE,
   backgroundId = DEFAULT_SHEET_BACKGROUND_ID,
+  contentInsetIn = DEFAULT_CONTENT_INSET_IN,
 }: {
   children: ReactNode;
   className?: string;
   onOverflowChange?: (overflowing: boolean) => void;
   headerLocale?: SheetHeaderLocaleId;
   backgroundId?: SheetBackgroundId | string;
+  contentInsetIn?: number;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -197,6 +211,7 @@ export function LetterShell({
       stageHeight={stageHeight}
       headerLocale={headerLocale}
       backgroundId={backgroundId}
+      contentInsetIn={contentInsetIn}
       pageRef={pageRef}
       contentRef={contentRef}
       shellRef={shellRef}

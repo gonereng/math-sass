@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  MAX_CONTENT_INSET_IN,
+  MIN_CONTENT_INSET_IN,
+  isSheetBackgroundId,
+} from "@/lib/sheet-backgrounds";
 
 export const minMaxSchema = z
   .object({
@@ -29,6 +34,21 @@ export const updateLayoutSchema = z.object({
 export const updateTemplateNameSchema = z.object({
   templateId: z.string().min(1),
   name: z.string().trim().min(1).max(100),
+});
+
+export const updateTemplateBackgroundSchema = z.object({
+  templateId: z.string().min(1),
+  backgroundId: z.string().refine(isSheetBackgroundId, {
+    message: "Unknown background",
+  }),
+});
+
+export const updateTemplateContentInsetSchema = z.object({
+  templateId: z.string().min(1),
+  contentInsetIn: z.coerce
+    .number()
+    .min(MIN_CONTENT_INSET_IN)
+    .max(MAX_CONTENT_INSET_IN),
 });
 
 export const deleteTemplateSchema = z.object({

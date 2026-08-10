@@ -1,3 +1,11 @@
+import {
+  DEFAULT_CONTENT_INSET_IN,
+  DEFAULT_SHEET_BACKGROUND_ID,
+  clampContentInsetIn,
+  getSheetBackground,
+  isSheetBackgroundId,
+} from "@/lib/sheet-backgrounds";
+
 export type SnapshotItem = {
   boxId: string;
   problemTypeId: string;
@@ -9,12 +17,16 @@ export type SnapshotItem = {
 export type TemplateSnapshot = {
   templateName: string;
   layoutId: string;
+  backgroundId: string;
+  contentInsetIn: number;
   items: SnapshotItem[];
 };
 
 export function buildTemplateSnapshot(template: {
   name: string;
   layoutId: string;
+  backgroundId?: string;
+  contentInsetIn?: number;
   items: {
     boxId: string;
     problemTypeId: string;
@@ -24,9 +36,16 @@ export function buildTemplateSnapshot(template: {
     props?: unknown;
   }[];
 }): TemplateSnapshot {
+  const background = getSheetBackground(
+    template.backgroundId ?? DEFAULT_SHEET_BACKGROUND_ID,
+  );
   return {
     templateName: template.name,
     layoutId: template.layoutId,
+    backgroundId: background.id,
+    contentInsetIn: clampContentInsetIn(
+      template.contentInsetIn ?? background.defaultContentInsetIn,
+    ),
     items: template.items
       .slice()
       .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -42,6 +61,27 @@ export function buildTemplateSnapshot(template: {
           rangeMax: item.rangeMax,
         };
       }),
+  };
+}
+
+/** Normalize stored JSON (including older snapshots missing appearance fields). */
+export function normalizeTemplateSnapshot(raw: unknown): TemplateSnapshot {
+  const s = (raw ?? {}) as Partial<TemplateSnapshot> & {
+    items?: SnapshotItem[];
+  };
+  const backgroundId = isSheetBackgroundId(String(s.backgroundId ?? ""))
+    ? String(s.backgroundId)
+    : DEFAULT_SHEET_BACKGROUND_ID;
+  return {
+    templateName: typeof s.templateName === "string" ? s.templateName : "",
+    layoutId: typeof s.layoutId === "string" ? s.layoutId : "two-columns",
+    backgroundId,
+    contentInsetIn: clampContentInsetIn(
+      typeof s.contentInsetIn === "number"
+        ? s.contentInsetIn
+        : DEFAULT_CONTENT_INSET_IN,
+    ),
+    items: Array.isArray(s.items) ? s.items : [],
   };
 }
 

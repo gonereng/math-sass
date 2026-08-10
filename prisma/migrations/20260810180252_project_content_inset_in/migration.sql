@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Project" ADD COLUMN     "contentInsetIn" DOUBLE PRECISION NOT NULL DEFAULT 0.5;

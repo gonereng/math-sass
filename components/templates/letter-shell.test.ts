@@ -45,6 +45,14 @@ describe("LetterShellView", () => {
     expect(html).toContain("letter-shell-viewport");
   });
 
+  it("clips the letter shell to a fixed page height", () => {
+    const html = renderToStaticMarkup(
+      createElement(LetterShellView, null, "x"),
+    );
+    expect(html).toContain("overflow-hidden");
+    expect(html).toContain("height:11in");
+  });
+
   it("applies kids-frame background and hides black border", () => {
     const html = renderToStaticMarkup(
       createElement(LetterShellView, { backgroundId: "kids-frame" }, "x"),
@@ -60,5 +68,19 @@ describe("LetterShellView", () => {
     );
     expect(html).toContain('data-sheet-background="blank"');
     expect(html).toContain("border-2 border-black");
+  });
+
+  it("applies content inset as absolute edges", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        LetterShellView,
+        { backgroundId: "kids-frame", contentInsetIn: 0.9 },
+        "x",
+      ),
+    );
+    expect(html).toContain("top:0.9in");
+    expect(html).toContain("right:0.9in");
+    expect(html).toContain("bottom:0.9in");
+    expect(html).toContain("left:0.9in");
   });
 });

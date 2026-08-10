@@ -4,7 +4,8 @@ import { useLayoutEffect, useState, type RefObject } from "react";
 import { isPageOverflowing } from "@/components/templates/page-overflow";
 
 /**
- * Measure unscaled layout sizes (offset*) — getBoundingClientRect includes fit-scale transform.
+ * Measure unscaled layout sizes (offset* / scroll*) — getBoundingClientRect includes fit-scale transform.
+ * Content is the inset clip box: scrollHeight is full content, clientHeight is the visible area.
  */
 export function usePageOverflow(
   pageRef: RefObject<HTMLElement | null>,
@@ -19,8 +20,13 @@ export function usePageOverflow(
     if (!pageEl || !contentEl) return;
 
     const measure = () => {
-      setPageHeight(pageEl.offsetHeight);
-      setContentHeight(contentEl.offsetHeight);
+      // Prefer the inset content box for overflow; fall back to silhouette height.
+      const visible =
+        contentEl.clientHeight > 0
+          ? contentEl.clientHeight
+          : pageEl.offsetHeight;
+      setPageHeight(visible);
+      setContentHeight(contentEl.scrollHeight);
     };
 
     measure();

@@ -23,6 +23,8 @@ describe("buildTemplateSnapshot", () => {
     expect(snap).toEqual({
       templateName: "Addition practice",
       layoutId: "two-columns",
+      backgroundId: "blank",
+      contentInsetIn: 0.5,
       items: [
         {
           boxId: "col-left",
@@ -34,6 +36,18 @@ describe("buildTemplateSnapshot", () => {
       ],
     });
   });
+
+  it("copies background and inset from the template", () => {
+    const snap = buildTemplateSnapshot({
+      name: "Framed",
+      layoutId: "two-columns",
+      backgroundId: "kids-frame",
+      contentInsetIn: 1.1,
+      items: [],
+    });
+    expect(snap.backgroundId).toBe("kids-frame");
+    expect(snap.contentInsetIn).toBe(1.1);
+  });
 });
 
 describe("assertSnapshotRanges", () => {
@@ -41,6 +55,8 @@ describe("assertSnapshotRanges", () => {
     const result = assertSnapshotRanges({
       templateName: "T",
       layoutId: "two-columns",
+      backgroundId: "blank",
+      contentInsetIn: 0.5,
       items: [
         {
           boxId: "col-left",
@@ -59,6 +75,8 @@ describe("assertSnapshotRanges", () => {
       assertSnapshotRanges({
         templateName: "Empty",
         layoutId: "two-columns",
+        backgroundId: "blank",
+        contentInsetIn: 0.5,
         items: [],
       }).ok,
     ).toBe(true);

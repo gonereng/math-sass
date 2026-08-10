@@ -5,52 +5,47 @@ import {
   LETTER_WIDTH_IN,
 } from "@/components/templates/letter-fit-scale";
 
-/** Printable content height inside 0.5in padding on letter. */
-const LETTER_CONTENT_PX = LETTER_HEIGHT_IN * 96 - 2 * 0.5 * 96;
-
-function applyFitScale(shell: HTMLElement): () => void {
-  const content = shell.querySelector<HTMLElement>(".letter-shell__content");
-  if (!content) return () => {};
-  const contentHeight = content.scrollHeight;
-  const scale =
-    contentHeight > LETTER_CONTENT_PX
-      ? Math.min(1, (LETTER_CONTENT_PX * 0.98) / contentHeight)
-      : 1;
-  content.style.setProperty("--print-scale", String(scale));
-  content.style.transformOrigin = "top left";
-  content.style.transform = `scale(${scale})`;
-  return () => {
-    content.style.removeProperty("--print-scale");
-    content.style.removeProperty("transform");
-    content.style.removeProperty("transform-origin");
-  };
-}
-
 function prepareShellForCapture(shell: HTMLElement): () => void {
   const prev = {
     transform: shell.style.transform,
     width: shell.style.width,
     height: shell.style.height,
     minHeight: shell.style.minHeight,
+    overflow: shell.style.overflow,
   };
   shell.style.transform = "none";
   shell.style.width = `${LETTER_WIDTH_IN}in`;
   shell.style.height = `${LETTER_HEIGHT_IN}in`;
   shell.style.minHeight = `${LETTER_HEIGHT_IN}in`;
+  shell.style.overflow = "hidden";
 
   const wash = shell.querySelector<HTMLElement>("[data-overflow-wash]");
   const washDisplay = wash?.style.display;
   if (wash) wash.style.display = "none";
 
-  const clearFit = applyFitScale(shell);
+  const content = shell.querySelector<HTMLElement>(".letter-shell__content");
+  const contentPrev = content
+    ? {
+        overflow: content.style.overflow,
+        transform: content.style.transform,
+      }
+    : null;
+  if (content) {
+    content.style.overflow = "hidden";
+    content.style.transform = "none";
+  }
 
   return () => {
     shell.style.transform = prev.transform;
     shell.style.width = prev.width;
     shell.style.height = prev.height;
     shell.style.minHeight = prev.minHeight;
+    shell.style.overflow = prev.overflow;
     if (wash) wash.style.display = washDisplay ?? "";
-    clearFit();
+    if (content && contentPrev) {
+      content.style.overflow = contentPrev.overflow;
+      content.style.transform = contentPrev.transform;
+    }
   };
 }
 
@@ -215,7 +210,6 @@ export async function exportLetterPagesToPdf(input: {
 
 /**
  * PDF with only the first page of each section (no answer key).
- * Used after Generate.
  */
 export async function exportSectionFirstPagesToPdf(input: {
   root: HTMLElement;

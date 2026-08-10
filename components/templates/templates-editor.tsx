@@ -28,10 +28,20 @@ import {
   deleteTemplate,
   reorderTemplateItems,
   removeTemplateItem,
+  updateTemplateBackground,
+  updateTemplateContentInset,
   updateTemplateLayout,
   updateTemplateName,
   type TemplateWithItems,
 } from "@/lib/actions/templates";
+import {
+  MAX_CONTENT_INSET_IN,
+  MIN_CONTENT_INSET_IN,
+  SHEET_BACKGROUND_OPTIONS,
+  clampContentInsetIn,
+  getSheetBackground,
+  isSheetBackgroundId,
+} from "@/lib/sheet-backgrounds";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -56,6 +66,7 @@ export function TemplatesEditor({
   const [pageOverflowing, setPageOverflowing] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const [insetDraft, setInsetDraft] = useState(0.5);
   const canvasScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,6 +91,12 @@ export function TemplatesEditor({
       setTitleDraft(selected.name);
     }
   }, [selected, editingTitle]);
+
+  useEffect(() => {
+    if (selected) {
+      setInsetDraft(clampContentInsetIn(selected.contentInsetIn));
+    }
+  }, [selected?.id, selected?.contentInsetIn]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -237,6 +254,54 @@ export function TemplatesEditor({
       setTemplates((prev) =>
         prev.map((t) => (t.id === selected.id ? result.template : t)),
       );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleBackgroundChange(next: string) {
+    if (!selected || !isSheetBackgroundId(next)) return;
+    setBusy(true);
+    try {
+      const result = await updateTemplateBackground({
+        templateId: selected.id,
+        backgroundId: next,
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === selected.id ? result.template : t)),
+      );
+      setInsetDraft(clampContentInsetIn(result.template.contentInsetIn));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleContentInsetChange(next: number) {
+    if (!selected) return;
+    const contentInsetIn = clampContentInsetIn(next);
+    setInsetDraft(contentInsetIn);
+    if (contentInsetIn === clampContentInsetIn(selected.contentInsetIn)) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await updateTemplateContentInset({
+        templateId: selected.id,
+        contentInsetIn,
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        setInsetDraft(clampContentInsetIn(selected.contentInsetIn));
+        return;
+      }
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === selected.id ? result.template : t)),
+      );
+      setInsetDraft(clampContentInsetIn(result.template.contentInsetIn));
     } finally {
       setBusy(false);
     }
@@ -440,13 +505,60 @@ export function TemplatesEditor({
                     </Button>
                   </div>
                 </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="shrink-0">Background</span>
+                    <select
+                      className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm text-foreground"
+                      value={getSheetBackground(selected.backgroundId).id}
+                      aria-label="Sheet background"
+                      disabled={busy}
+                      onChange={(e) => {
+                        void handleBackgroundChange(e.target.value);
+                      }}
+                    >
+                      {SHEET_BACKGROUND_OPTIONS.map((background) => (
+                        <option key={background.id} value={background.id}>
+                          {background.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="shrink-0">Inset</span>
+                    <input
+                      type="range"
+                      min={MIN_CONTENT_INSET_IN}
+                      max={MAX_CONTENT_INSET_IN}
+                      step={0.05}
+                      value={insetDraft}
+                      aria-label="Content inset in inches"
+                      disabled={busy}
+                      className="w-28 accent-primary"
+                      onChange={(e) => {
+                        setInsetDraft(
+                          clampContentInsetIn(Number(e.target.value)),
+                        );
+                      }}
+                      onPointerUp={() => {
+                        void handleContentInsetChange(insetDraft);
+                      }}
+                      onBlur={() => {
+                        void handleContentInsetChange(insetDraft);
+                      }}
+                    />
+                    <span className="w-12 tabular-nums text-foreground">
+                      {insetDraft.toFixed(2)}″
+                    </span>
+                  </label>
+                </div>
                 <div className="min-h-[2.75rem]">
                   {pageOverflowing ? (
                     <div
                       role="status"
                       className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
                     >
-                      Content exceeds one page
+                      Content exceeds one page — cropped in preview
                     </div>
                   ) : null}
                 </div>
@@ -455,7 +567,11 @@ export function TemplatesEditor({
                 ref={canvasScrollRef}
                 className="min-h-0 flex-1 overflow-auto px-2 [scrollbar-gutter:stable]"
               >
-                <LetterShell onOverflowChange={setPageOverflowing}>
+                <LetterShell
+                  backgroundId={selected.backgroundId}
+                  contentInsetIn={insetDraft}
+                  onOverflowChange={setPageOverflowing}
+                >
                   <TemplateCanvas
                     template={selected}
                     onRemoveItem={handleRemoveItem}

@@ -1,13 +1,19 @@
-# Progress Ledger
+﻿# Progress Ledger
 
-Feature: equation-column-alignment
-Plan: docs/superpowers/plans/2026-08-05-equation-column-alignment.md
-Branch: main
-Started: 2026-08-05
+Feature: project-page-backgrounds
+Plan: docs/superpowers/plans/2026-08-10-project-page-backgrounds.md
+Branch: feat/project-page-backgrounds
+Started: 2026-08-10
 
-Task 1: complete (2ffb5b3) — inline, subagent usage limit
-Task 2: complete (binary-eq)
-Task 3: complete (missing-mid)
-Task 4: complete (vertical)
-Task 5: complete (compare + tens-ones)
-All tasks complete. Final review: inline. 66/66 tests pass.
+
+Task 1: complete (commits f87a834..12cede6, review clean)
+
+Task 2: complete (commits 12cede6..eb48bff, review clean)
+
+Task 3: complete (commits eb48bff..0ea2a83, review clean after layering fix)
+
+Task 4: complete (commits 0ea2a83..e972782, review clean)
+
+Final review: Needs work on asset MIME + print.css; fixed in fc3ca28. Remaining: low-res asset (~93 DPI) — user to supply higher-res later.
+All tasks complete.
+

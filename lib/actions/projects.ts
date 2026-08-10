@@ -12,6 +12,7 @@ import {
 import {
   assertSnapshotRanges,
   buildTemplateSnapshot,
+  normalizeTemplateSnapshot,
   templateItemsHaveRanges,
   type TemplateSnapshot,
 } from "@/lib/projects/snapshot";
@@ -23,7 +24,6 @@ import {
   removeSectionSchema,
   pageCountSchema,
   reorderSectionsSchema,
-  updateProjectBackgroundSchema,
   updateProjectNameSchema,
   updateSectionPageCountSchema,
 } from "@/lib/validations/project";
@@ -38,7 +38,6 @@ export type GeneratedPageItem = {
 export type ProjectWithDetails = {
   id: string;
   name: string;
-  backgroundId: string;
   updatedAt: string;
   lastGeneratedFingerprint: string | null;
   sections: {
@@ -65,13 +64,12 @@ async function requireUserId(): Promise<string | null> {
 }
 
 function parseSnapshot(raw: unknown): TemplateSnapshot {
-  return raw as TemplateSnapshot;
+  return normalizeTemplateSnapshot(raw);
 }
 
 function mapProject(project: {
   id: string;
   name: string;
-  backgroundId: string;
   updatedAt: Date;
   lastGeneratedFingerprint: string | null;
   sections: {
@@ -92,7 +90,6 @@ function mapProject(project: {
   return {
     id: project.id,
     name: project.name,
-    backgroundId: project.backgroundId,
     updatedAt: project.updatedAt.toISOString(),
     lastGeneratedFingerprint: project.lastGeneratedFingerprint,
     sections: project.sections
@@ -200,29 +197,6 @@ export async function updateProjectName(
     const result = await prisma.project.updateMany({
       where: { id: parsed.data.projectId, userId },
       data: { name: parsed.data.name },
-    });
-    if (result.count === 0) return { ok: false, error: UNEXPECTED };
-    const project = await loadProjectForUser(parsed.data.projectId, userId);
-    if (!project) return { ok: false, error: UNEXPECTED };
-    revalidatePath("/projects");
-    revalidatePath(`/projects/${parsed.data.projectId}`);
-    return { ok: true, project };
-  } catch {
-    return { ok: false, error: UNEXPECTED };
-  }
-}
-
-export async function updateProjectBackground(
-  input: { projectId: string; backgroundId: string },
-): Promise<{ ok: true; project: ProjectWithDetails } | { ok: false; error: string }> {
-  const userId = await requireUserId();
-  if (!userId) return { ok: false, error: UNEXPECTED };
-  const parsed = updateProjectBackgroundSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Invalid background" };
-  try {
-    const result = await prisma.project.updateMany({
-      where: { id: parsed.data.projectId, userId },
-      data: { backgroundId: parsed.data.backgroundId },
     });
     if (result.count === 0) return { ok: false, error: UNEXPECTED };
     const project = await loadProjectForUser(parsed.data.projectId, userId);
@@ -454,7 +428,28 @@ export async function generateProject(
 
     let pageIndex = 0;
     for (const section of sections) {
-      const snapshot = parseSnapshot(section.templateSnapshot);
+      let snapshot = parseSnapshot(section.templateSnapshot);
+
+      if (section.sourceTemplateId) {
+        const live = await prisma.template.findFirst({
+          where: { id: section.sourceTemplateId, userId },
+          include: { items: true },
+        });
+        if (live) {
+          snapshot = {
+            ...snapshot,
+            backgroundId: live.backgroundId,
+            contentInsetIn: live.contentInsetIn,
+          };
+          await prisma.projectSection.update({
+            where: { id: section.id },
+            data: {
+              templateSnapshot: snapshot as unknown as Prisma.InputJsonValue,
+            },
+          });
+        }
+      }
+
       for (let n = 0; n < section.pageCount; n++) {
         const items = snapshot.items.map((item) => ({
           boxId: item.boxId,

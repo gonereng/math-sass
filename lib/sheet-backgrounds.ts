@@ -1,15 +1,22 @@
+export const DEFAULT_CONTENT_INSET_IN = 0.5;
+export const MIN_CONTENT_INSET_IN = 0.25;
+export const MAX_CONTENT_INSET_IN = 1.5;
+
 export const SHEET_BACKGROUNDS = {
   blank: {
     id: "blank",
     label: "Blank",
     src: null as string | null,
     showPageBorder: true,
+    /** Suggested content padding (inches) when this background is selected. */
+    defaultContentInsetIn: DEFAULT_CONTENT_INSET_IN,
   },
   "kids-frame": {
     id: "kids-frame",
     label: "Kids frame",
     src: "/backgrounds/kids-frame.jpg",
     showPageBorder: false,
+    defaultContentInsetIn: 0.9,
   },
 } as const;
 
@@ -31,4 +38,12 @@ export function getSheetBackground(
 ): SheetBackground {
   if (isSheetBackgroundId(id)) return SHEET_BACKGROUNDS[id];
   return SHEET_BACKGROUNDS.blank;
+}
+
+export function clampContentInsetIn(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_CONTENT_INSET_IN;
+  return Math.min(
+    MAX_CONTENT_INSET_IN,
+    Math.max(MIN_CONTENT_INSET_IN, value),
+  );
 }

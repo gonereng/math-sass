@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   pageCountSchema,
-  updateProjectBackgroundSchema,
   updateProjectNameSchema,
 } from "./project";
 
@@ -31,27 +30,5 @@ describe("updateProjectNameSchema", () => {
     expect(() =>
       updateProjectNameSchema.parse({ projectId: "p1", name: "   " }),
     ).toThrow();
-  });
-});
-
-describe("updateProjectBackgroundSchema", () => {
-  it("accepts blank and kids-frame", () => {
-    for (const backgroundId of ["blank", "kids-frame"]) {
-      expect(
-        updateProjectBackgroundSchema.safeParse({
-          projectId: "p1",
-          backgroundId,
-        }).success,
-      ).toBe(true);
-    }
-  });
-
-  it("rejects unknown background", () => {
-    expect(
-      updateProjectBackgroundSchema.safeParse({
-        projectId: "p1",
-        backgroundId: "neon",
-      }).success,
-    ).toBe(false);
   });
 });
