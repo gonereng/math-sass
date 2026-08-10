@@ -15,6 +15,7 @@ import {
   generateProject,
   removeProjectSection,
   reorderProjectSections,
+  updateProjectBackground,
   updateProjectName,
   updateSectionPageCount,
   type ProjectWithDetails,
@@ -29,6 +30,10 @@ import {
   isSheetHeaderLocaleId,
   type SheetHeaderLocaleId,
 } from "@/lib/i18n/sheet-header-locales";
+import {
+  SHEET_BACKGROUND_OPTIONS,
+  isSheetBackgroundId,
+} from "@/lib/sheet-backgrounds";
 import { toast } from "sonner";
 
 type TemplateOption = { id: string; name: string };
@@ -207,6 +212,24 @@ export function ProjectsEditor({
     setBusy(true);
     try {
       const result = await updateSectionPageCount({ sectionId, pageCount });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setProject(result.project);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleBackgroundChange(next: string) {
+    if (!isSheetBackgroundId(next)) return;
+    setBusy(true);
+    try {
+      const result = await updateProjectBackground({
+        projectId: project.id,
+        backgroundId: next,
+      });
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -538,6 +561,23 @@ export function ProjectsEditor({
                 ))}
               </select>
             </label>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="shrink-0">Background</span>
+              <select
+                className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm text-foreground"
+                value={project.backgroundId}
+                disabled={busy}
+                onChange={(e) => {
+                  void handleBackgroundChange(e.target.value);
+                }}
+              >
+                {SHEET_BACKGROUND_OPTIONS.map((background) => (
+                  <option key={background.id} value={background.id}>
+                    {background.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             {stale ? (
               <p
                 role="status"
@@ -569,7 +609,10 @@ export function ProjectsEditor({
                     data-print-kind="worksheet"
                     data-section-id={page.sectionId}
                   >
-                    <LetterShell headerLocale={headerLocale}>
+                    <LetterShell
+                      headerLocale={headerLocale}
+                      backgroundId={project.backgroundId}
+                    >
                       <WorksheetPageView
                         layoutId={page.layoutId}
                         items={page.items}
