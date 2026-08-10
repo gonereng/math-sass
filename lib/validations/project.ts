@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSheetBackgroundId } from "@/lib/sheet-backgrounds";
 
 export const pageCountSchema = z.coerce.number().int().min(1).max(50);
 
@@ -37,4 +38,11 @@ export const deleteProjectSchema = z.object({
 export const updateProjectNameSchema = z.object({
   projectId: z.string().min(1),
   name: z.string().trim().min(1).max(100),
+});
+
+export const updateProjectBackgroundSchema = z.object({
+  projectId: z.string().min(1),
+  backgroundId: z.string().refine(isSheetBackgroundId, {
+    message: "Unknown background",
+  }),
 });

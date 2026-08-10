@@ -90,6 +90,7 @@ model Project {
   id                       String           @id @default(cuid())
   userId                   String
   name                     String
+  backgroundId             String           @default("blank")
   lastGeneratedFingerprint String?
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
