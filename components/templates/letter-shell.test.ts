@@ -83,4 +83,12 @@ describe("LetterShellView", () => {
     expect(html).toContain("bottom:0.9in");
     expect(html).toContain("left:0.9in");
   });
+
+  it("gives the header a white background over sheet backgrounds", () => {
+    const html = renderToStaticMarkup(
+      createElement(LetterShellView, { backgroundId: "kids-frame" }, "x"),
+    );
+    expect(html).toContain("bg-white");
+    expect(html).toMatch(/<header[^>]*bg-white/);
+  });
 });

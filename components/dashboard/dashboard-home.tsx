@@ -34,7 +34,8 @@ export function DashboardHome() {
                 Print-ready export
               </p>
               <p className="text-sm text-muted-foreground">
-                Export from Projects downloads a letter-size PDF in the browser.
+                Export from Projects downloads a letter-size PDF plus cover and
+                answer-key PNGs in the browser.
               </p>
             </div>
           </div>

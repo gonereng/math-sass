@@ -128,7 +128,7 @@ export function LetterShellView({
             } as CSSProperties
           }
         >
-          <header className="mb-6 flex w-full flex-wrap items-baseline justify-between gap-y-3 text-sm">
+          <header className="relative z-20 -mx-2 mb-6 flex w-[calc(100%+1rem)] flex-wrap items-baseline justify-between gap-x-4 gap-y-3 bg-white px-2 py-2 text-sm">
             <ShellBlank label={labels.name} widthClass="min-w-[10rem]" />
             <ShellBlank label={labels.classLabel} widthClass="min-w-[6rem]" />
             <ShellBlank label={labels.date} widthClass="min-w-[6rem]" />

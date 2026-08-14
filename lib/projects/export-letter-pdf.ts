@@ -1,9 +1,21 @@
-import { toPng } from "html-to-image";
+import { toJpeg, toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import {
   LETTER_HEIGHT_IN,
   LETTER_WIDTH_IN,
 } from "@/components/templates/letter-fit-scale";
+
+/** Screen CSS px per inch at 96dpi — used for capture dimensions. */
+const CAPTURE_BASE_PX = 96;
+const CAPTURE_WIDTH_PX = Math.round(LETTER_WIDTH_IN * CAPTURE_BASE_PX);
+const CAPTURE_HEIGHT_PX = Math.round(LETTER_HEIGHT_IN * CAPTURE_BASE_PX);
+
+/** PNG exports (cover / answer key) stay sharp for thumbnails. */
+const PNG_PIXEL_RATIO = 2;
+
+/** JPEG in the PDF keeps file size down while remaining print-readable. */
+const PDF_PIXEL_RATIO = 1.5;
+const PDF_JPEG_QUALITY = 0.9;
 
 function prepareShellForCapture(shell: HTMLElement): () => void {
   const prev = {
@@ -49,24 +61,41 @@ function prepareShellForCapture(shell: HTMLElement): () => void {
   };
 }
 
+function shellCaptureOptions(pixelRatio: number) {
+  return {
+    cacheBust: true,
+    pixelRatio,
+    width: CAPTURE_WIDTH_PX,
+    height: CAPTURE_HEIGHT_PX,
+    style: {
+      transform: "none",
+      width: `${LETTER_WIDTH_IN}in`,
+      height: `${LETTER_HEIGHT_IN}in`,
+    },
+    filter: (node: Node) => {
+      if (!(node instanceof HTMLElement)) return true;
+      return !node.hasAttribute("data-overflow-wash");
+    },
+  };
+}
+
 async function captureShellPng(shell: HTMLElement): Promise<string> {
   const restore = prepareShellForCapture(shell);
   try {
     await new Promise((r) => requestAnimationFrame(() => r(undefined)));
-    return await toPng(shell, {
-      cacheBust: true,
-      pixelRatio: 2,
-      width: Math.round(LETTER_WIDTH_IN * 96),
-      height: Math.round(LETTER_HEIGHT_IN * 96),
-      style: {
-        transform: "none",
-        width: `${LETTER_WIDTH_IN}in`,
-        height: `${LETTER_HEIGHT_IN}in`,
-      },
-      filter: (node) => {
-        if (!(node instanceof HTMLElement)) return true;
-        return !node.hasAttribute("data-overflow-wash");
-      },
+    return await toPng(shell, shellCaptureOptions(PNG_PIXEL_RATIO));
+  } finally {
+    restore();
+  }
+}
+
+async function captureShellJpeg(shell: HTMLElement): Promise<string> {
+  const restore = prepareShellForCapture(shell);
+  try {
+    await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+    return await toJpeg(shell, {
+      ...shellCaptureOptions(PDF_PIXEL_RATIO),
+      quality: PDF_JPEG_QUALITY,
     });
   } finally {
     restore();
@@ -86,13 +115,13 @@ async function buildPdfFromShells(shells: HTMLElement[]): Promise<jsPDF> {
   });
 
   for (let i = 0; i < shells.length; i++) {
-    const dataUrl = await captureShellPng(shells[i]!);
+    const dataUrl = await captureShellJpeg(shells[i]!);
     if (i > 0) {
       pdf.addPage([LETTER_WIDTH_IN, LETTER_HEIGHT_IN], "portrait");
     }
     pdf.addImage(
       dataUrl,
-      "PNG",
+      "JPEG",
       0,
       0,
       LETTER_WIDTH_IN,
@@ -128,6 +157,15 @@ export function getWorksheetShells(root: HTMLElement): HTMLElement[] {
   return [
     ...root.querySelectorAll<HTMLElement>(
       '.print-page[data-print-kind="worksheet"] .letter-shell',
+    ),
+  ];
+}
+
+/** Answer-key shells in DOM order. */
+export function getAnswerKeyShells(root: HTMLElement): HTMLElement[] {
+  return [
+    ...root.querySelectorAll<HTMLElement>(
+      '.print-page[data-print-kind="answer-key"] .letter-shell',
     ),
   ];
 }
@@ -184,6 +222,7 @@ export function pickFirstPagePerSection<T extends { sectionId: string }>(
  * Downloads:
  * 1. Full PDF (all worksheet pages + answer keys)
  * 2. Cover PNG of the first worksheet page
+ * 3. Answer-key PNG of the first answer-key page (when present)
  */
 export async function exportLetterPagesToPdf(input: {
   root: HTMLElement;
@@ -198,6 +237,7 @@ export async function exportLetterPagesToPdf(input: {
 
   const name = baseFileName(input.fileName);
   const worksheetShells = getWorksheetShells(input.root);
+  const answerKeyShells = getAnswerKeyShells(input.root);
   const coverShell = worksheetShells[0] ?? allShells[0]!;
 
   const fullPdf = await buildPdfFromShells(allShells);
@@ -206,6 +246,13 @@ export async function exportLetterPagesToPdf(input: {
   await delay(150);
   const coverPngDataUrl = await captureShellPng(coverShell);
   downloadDataUrl(coverPngDataUrl, `${name}-cover.png`);
+
+  const answerKeyShell = answerKeyShells[0];
+  if (answerKeyShell) {
+    await delay(150);
+    const answerKeyPngDataUrl = await captureShellPng(answerKeyShell);
+    downloadDataUrl(answerKeyPngDataUrl, `${name}-answer-key.png`);
+  }
 }
 
 /**
